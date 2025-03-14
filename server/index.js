@@ -430,12 +430,22 @@ const createWebRtcTransport = async (router) => {
         listenIps: [
           {
             ip: '0.0.0.0', // replace with relevant IP address
-            announcedIp: '127.0.0.1',
+            announcedIp: '138.124.93.138',
           }
         ],
         enableUdp: true,
         enableTcp: true,
         preferUdp: true,
+        iceServers: [
+          {
+            urls:  'stun:stun.l.google.com:19302' // Пример STUN сервера
+          },
+          {
+            urls: 'turn:relay1.expressturn.com:3478', // Пример TURN сервера
+            username:  'efY1N8CC9QW4SWCLD9', // Имя пользователя для TURN сервера
+            credential: 'JiQ8WC2gbyA4G3Ja' // Пароль для TURN сервера
+          }
+        ]
       }
 
       // https://mediasoup.org/documentation/v3/mediasoup/api/#router-createWebRtcTransport
