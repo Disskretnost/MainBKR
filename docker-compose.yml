@@ -11,7 +11,6 @@ services:
     env_file:
       - .env
     ports:
-      - "3000:3000"
       - "2000-2020:2000-2020" 
       - "4200:4200"  
     depends_on:

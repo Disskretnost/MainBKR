@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import io from 'socket.io-client';
 import { Device } from 'mediasoup-client';
 
-const socketIo = io('wss://kucherenkoaleksanr.ru/mediasoup');
+const socketIo = io('ws://localhost/mediasoup');
 const roomName = 'test1'; // Room name is hardcoded to 'test1'
 
 let device;
@@ -29,7 +29,7 @@ let audioParams;
 let videoParams = { params };
 let consumingTransports = [];
 
-const App = () => {
+const VideoCall = () => {
   useEffect(() => {
     socketIo.on('connection-success', ({ socketId }) => {
       console.log(socketId);
@@ -278,4 +278,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default VideoCall;
