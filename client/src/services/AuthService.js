@@ -51,6 +51,7 @@ export default class AuthService {
   static async refreshToken(refreshToken) {
     try {
       const response = await $api.post('/refresh', { refreshToken });
+      console.log(response.data)
 
       if (response.status === 200 && response.data) {
         return response.data; // Возвращаем обновленные токены

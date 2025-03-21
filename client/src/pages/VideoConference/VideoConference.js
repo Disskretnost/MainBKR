@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import { Device } from 'mediasoup-client';
+import { useSelector } from 'react-redux'; // Import useSelector
 
-const socketIo = io('ws://localhost/mediasoup');
-const roomName = 'test1'; // Room name is hardcoded to 'test1'
+//const roomName = 'test1'; // Room name is hardcoded to 'test1'
 
 let device;
 let rtpCapabilities;
@@ -30,15 +30,20 @@ let videoParams = { params };
 let consumingTransports = [];
 
 const VideoCall = () => {
+  const socketRef = useRef(null); // Ref to hold the socket instance
+  const roomId = useSelector((state) => state.conference.id); // Get roomId from Redux store
+  
   useEffect(() => {
-    socketIo.on('connection-success', ({ socketId }) => {
+
+    socketRef.current = io('ws://localhost/mediasoup');
+    socketRef.current.on('connection-success', ({ socketId }) => {
       console.log(socketId);
       getLocalStream();
     });
 
-    socketIo.on('new-producer', ({ producerId }) => signalNewConsumerTransport(producerId));
+    socketRef.current.on('new-producer', ({ producerId }) => signalNewConsumerTransport(producerId));
 
-    socketIo.on('producer-closed', ({ remoteProducerId }) => {
+    socketRef.current.on('producer-closed', ({ remoteProducerId }) => {
       const producerToClose = consumerTransports.find(
         (transportData) => transportData.producerId === remoteProducerId
       );
@@ -52,9 +57,9 @@ const VideoCall = () => {
     });
 
     return () => {
-      socketIo.off('connection-success');
-      socketIo.off('new-producer');
-      socketIo.off('producer-closed');
+      socketRef.current.off('connection-success');
+      socketRef.current.off('new-producer');
+      socketRef.current.off('producer-closed');
     };
   }, []);
 
@@ -81,7 +86,8 @@ const VideoCall = () => {
   };
 
   const joinRoom = () => {
-    socketIo.emit('joinRoom', { roomName }, (data) => {
+    console.log("Такое название комнаты", roomId)
+    socketRef.current.emit('joinRoom', { roomId }, (data) => {
       console.log(`Router RTP Capabilities... ${data.rtpCapabilities}`);
       rtpCapabilities = data.rtpCapabilities;
       createDevice();
@@ -103,7 +109,7 @@ const VideoCall = () => {
   };
 
   const createSendTransport = () => {
-    socketIo.emit('createWebRtcTransport', { consumer: false }, ({ params }) => {
+    socketRef.current.emit('createWebRtcTransport', { consumer: false }, ({ params }) => {
       if (params.error) {
         console.log(params.error);
         return;
@@ -113,7 +119,7 @@ const VideoCall = () => {
       producerTransport = device.createSendTransport(params);
       producerTransport.on('connect', async ({ dtlsParameters }, callback, errback) => {
         try {
-          await socketIo.emit('transport-connect', { dtlsParameters });
+          await socketRef.current.emit('transport-connect', { dtlsParameters });
           callback();
         } catch (error) {
           errback(error);
@@ -124,7 +130,7 @@ const VideoCall = () => {
         console.log(parameters);
 
         try {
-          await socketIo.emit(
+          await socketRef.current.emit(
             'transport-produce',
             {
               kind: parameters.kind,
@@ -171,7 +177,7 @@ const VideoCall = () => {
 
     consumingTransports.push(remoteProducerId);
 
-    await socketIo.emit('createWebRtcTransport', { consumer: true }, ({ params }) => {
+    await socketRef.current.emit('createWebRtcTransport', { consumer: true }, ({ params }) => {
       if (params.error) {
         console.log(params.error);
         return;
@@ -188,7 +194,7 @@ const VideoCall = () => {
 
       consumerTransport.on('connect', async ({ dtlsParameters }, callback, errback) => {
         try {
-          await socketIo.emit('transport-recv-connect', {
+          await socketRef.current.emit('transport-recv-connect', {
             dtlsParameters,
             serverConsumerTransportId: params.id
           });
@@ -203,14 +209,14 @@ const VideoCall = () => {
   };
 
   const getProducers = () => {
-    socketIo.emit('getProducers', (producerIds) => {
+    socketRef.current.emit('getProducers', (producerIds) => {
       console.log(producerIds);
       producerIds.forEach(signalNewConsumerTransport);
     });
   };
 
   const connectRecvTransport = async (consumerTransport, remoteProducerId, serverConsumerTransportId) => {
-    await socketIo.emit(
+    await socketRef.current.emit(
       'consume',
       {
         rtpCapabilities: device.rtpCapabilities,
@@ -255,7 +261,7 @@ const VideoCall = () => {
         videoContainer.appendChild(newElem);
         const { track } = consumer;
         document.getElementById(remoteProducerId).srcObject = new MediaStream([track]);
-        socketIo.emit('consumer-resume', { serverConsumerId: params.serverConsumerId });
+        socketRef.current.emit('consumer-resume', { serverConsumerId: params.serverConsumerId });
       }
     );
   };

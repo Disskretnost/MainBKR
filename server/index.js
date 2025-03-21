@@ -16,10 +16,8 @@ const path = require('path');
 
 
 app.use(cors({
-  origin: 'http://localhost:3001', // Разрешить доступ только с этого источника
-  methods: '*',                 // Разрешить все HTTP-методы
-  allowedHeaders: '*',         // Разрешить все заголовки
-  credentials: true            // Разрешить передачу JWT/cookies
+  origin: 'http://localhost:3000', // Замените на адрес вашего React-приложения
+  credentials: true  // Разрешите отправку кук (если это действительно нужно)
 }));
 app.use(express.json());  // Для парсинга JSON в запросах
 
@@ -103,37 +101,10 @@ connections.on('connection', async socket => {
     socketId: socket.id,
   })
 
-  const removeItems = (items, socketId, type) => {
-    items.forEach(item => {
-      if (item.socketId === socket.id) {
-        item[type].close()
-      }
-    })
-    items = items.filter(item => item.socketId !== socket.id)
-
-    return items
-  }
-
-  socket.on('disconnect', () => {
-    // do some cleanup
-    console.log('peer disconnected')
-    consumers = removeItems(consumers, socket.id, 'consumer')
-    producers = removeItems(producers, socket.id, 'producer')
-    transports = removeItems(transports, socket.id, 'transport')
-
-    const { roomName } = peers[socket.id]
-    delete peers[socket.id]
-
-    // remove socket from room
-    rooms[roomName] = {
-      router: rooms[roomName].router,
-      peers: rooms[roomName].peers.filter(socketId => socketId !== socket.id)
-    }
-  })
+  
 
   socket.on('joinRoom', async ({ roomName }, callback) => {
-    // create Router if it does not exist
-    // const router1 = rooms[roomName] && rooms[roomName].get('data').router || await createRoom(roomName, socket.id)
+
     const router1 = await createRoom(roomName, socket.id)
 
     peers[socket.id] = {
@@ -148,19 +119,13 @@ connections.on('connection', async socket => {
       }
     }
 
-    // get Router RTP Capabilities
     const rtpCapabilities = router1.rtpCapabilities
 
-    // call callback from the client and send back the rtpCapabilities
     callback({ rtpCapabilities })
   })
 
   const createRoom = async (roomName, socketId) => {
-    // worker.createRouter(options)
-    // options = { mediaCodecs, appData }
-    // mediaCodecs -> defined above
-    // appData -> custom application data - we are not supplying any
-    // none of the two are required
+
     let router1
     let peers = []
     if (rooms[roomName]) {
@@ -180,28 +145,6 @@ connections.on('connection', async socket => {
     return router1
   }
 
-  // socket.on('createRoom', async (callback) => {
-  //   if (router === undefined) {
-  //     // worker.createRouter(options)
-  //     // options = { mediaCodecs, appData }
-  //     // mediaCodecs -> defined above
-  //     // appData -> custom application data - we are not supplying any
-  //     // none of the two are required
-  //     router = await worker.createRouter({ mediaCodecs, })
-  //     console.log(`Router ID: ${router.id}`)
-  //   }
-
-  //   getRtpCapabilities(callback)
-  // })
-
-  // const getRtpCapabilities = (callback) => {
-  //   const rtpCapabilities = router.rtpCapabilities
-
-  //   callback({ rtpCapabilities })
-  // }
-
-  // Client emits a request to create server side Transport
-  // We need to differentiate between the producer and consumer transports
   socket.on('createWebRtcTransport', async ({ consumer }, callback) => {
     // get Room Name from Peer's properties
     const roomName = peers[socket.id].roomName
@@ -419,6 +362,40 @@ connections.on('connection', async socket => {
     console.log('consumer resume')
     const { consumer } = consumers.find(consumerData => consumerData.consumer.id === serverConsumerId)
     await consumer.resume()
+  })
+
+  const removeItems = (items, socketId, type) => {
+    items.forEach(item => {
+      if (item.socketId === socket.id) {
+        item[type].close()
+      }
+    })
+    items = items.filter(item => item.socketId !== socket.id)
+
+    return items
+  }
+
+  socket.on('disconnect', () => {
+    // do some cleanup
+    console.log('peer disconnected')
+    consumers = removeItems(consumers, socket.id, 'consumer')
+    producers = removeItems(producers, socket.id, 'producer')
+    transports = removeItems(transports, socket.id, 'transport')
+
+    const { roomName } = peers[socket.id]
+    delete peers[socket.id]
+
+    // remove socket from room
+    rooms[roomName] = {
+      router: rooms[roomName].router,
+      peers: rooms[roomName].peers.filter(socketId => socketId !== socket.id)
+    }
+
+    if (rooms[roomName].peers.length === 0) {
+      console.log(`Room ${roomName} is now empty, closing router`);
+      rooms[roomName].router.close(); // Close the router
+      delete rooms[roomName]; // Delete the room
+    }
   })
 })
 

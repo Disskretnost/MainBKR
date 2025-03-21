@@ -1,9 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer from './../slices/authSlice';  // Путь может быть другим, в зависимости от структуры проекта
+import authReducer from './../slices/authSlice';  // Путь может быть другим
+import conferenceReducer from './../slices/roomSlice'; // Импортируем conferenceReducer
 
 const store = configureStore({
   reducer: {
-    auth: authReducer,  // Здесь мы добавляем редуктор для аутентификации
+    auth: authReducer,
+    conference: conferenceReducer, 
   },
 });
 
