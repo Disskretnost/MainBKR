@@ -31,7 +31,8 @@ let consumingTransports = [];
 
 const VideoCall = () => {
   const socketRef = useRef(null); // Ref to hold the socket instance
-  const roomId = useSelector((state) => state.conference.id); // Get roomId from Redux store
+  const roomName =  useSelector((state) => state.conference.id);
+  const accessCode = useSelector((state) => state.conference.accessCode); // Get roomId from Redux store
   
   useEffect(() => {
 
@@ -86,8 +87,8 @@ const VideoCall = () => {
   };
 
   const joinRoom = () => {
-    console.log("Такое название комнаты", roomId)
-    socketRef.current.emit('joinRoom', { roomId }, (data) => {
+    console.log("Такое название комнаты", roomName)
+    socketRef.current.emit('joinRoom', {roomName}, (data) => {
       console.log(`Router RTP Capabilities... ${data.rtpCapabilities}`);
       rtpCapabilities = data.rtpCapabilities;
       createDevice();
@@ -280,6 +281,9 @@ const VideoCall = () => {
           </tr>
         </tbody>
       </table>
+      <div style={{ textAlign: 'center', marginTop: '20px' }}>
+        <h2>Access Code: {accessCode}</h2>
+      </div>
     </div>
   );
 };

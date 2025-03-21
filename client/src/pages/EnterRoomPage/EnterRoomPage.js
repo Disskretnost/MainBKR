@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './EnterRoomPage.css';
-
+import RoomService from '../../services/RoomService';
+import { useDispatch, useSelector } from 'react-redux';
+import { createConference } from '../../slices/roomSlice';
 const EnterRoomPage = () => {
   const navigate = useNavigate();
-
+  const dispatch = useDispatch();
   const [accessCode, setAccessCode] = useState(''); // Переименовано в accessCode
   const [error, setError] = useState('');
 
@@ -15,13 +17,23 @@ const EnterRoomPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!accessCode.trim()) { // Проверка accessCode
-      setError('Пожалуйста, введите код доступа.');
-      return;
-    }
-
-    // Перенаправляем на страницу видеоконференции, передавая код доступа
-    navigate(`/video?code=${accessCode}`); // Убрали roomId, передаем только code
+    RoomService.getConferenceByAccessCode(accessCode)
+      .then(result => {
+        console.log(result)
+        const { id, ownerId, accessCode, createdAt, isActive } = result; // Получаем все поля
+        dispatch(createConference({
+          id,
+          ownerId,
+          accessCode,
+          createdAt,
+          isActive
+        }));
+        navigate(`/room/${id}`);
+      })
+      .catch(err => {
+        console.error("Ошибка при подключении к комнате ", err);
+        alert("Ошибка при подключении к комнате Попробуйте еще раз.");
+      });
   };
 
   return (
