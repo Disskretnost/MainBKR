@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import { Device } from 'mediasoup-client';
 import { useSelector } from 'react-redux'; // Import useSelector
-
+import './VideoConference.css';
 //const roomName = 'test1'; // Room name is hardcoded to 'test1'
 
 let device;
@@ -33,12 +33,14 @@ const VideoCall = () => {
   const socketRef = useRef(null); // Ref to hold the socket instance
   const roomName =  useSelector((state) => state.conference.id);
   const accessCode = useSelector((state) => state.conference.accessCode); // Get roomId from Redux store
+  const socketIdRef = useRef(null); // Ref to hold the socket ID
   
   useEffect(() => {
 
     socketRef.current = io('ws://localhost/mediasoup');
     socketRef.current.on('connection-success', ({ socketId }) => {
       console.log(socketId);
+      socketIdRef.current = socketId; // Store socket ID in ref
       getLocalStream();
     });
 
@@ -54,7 +56,10 @@ const VideoCall = () => {
         (transportData) => transportData.producerId !== remoteProducerId
       );
       const videoContainer = document.getElementById('videoContainer');
-      videoContainer.removeChild(document.getElementById(`td-${remoteProducerId}`));
+      const elemToRemove = document.getElementById(`td-${remoteProducerId}`);
+      if (elemToRemove) {
+        videoContainer.removeChild(elemToRemove);
+      }
     });
 
     return () => {
@@ -77,8 +82,16 @@ const VideoCall = () => {
   };
 
   const streamSuccess = (stream) => {
-    const localVideo = document.getElementById('localVideo');
+    const localVideo = document.createElement('video');
     localVideo.srcObject = stream;
+    localVideo.autoplay = true;
+    localVideo.muted = true; // Отключаем звук для локального видео
+    localVideo.className = 'video-descendant';
+    localVideo.id = `video-${socketIdRef.current}`; // Добавляем уникальный идентификатор
+
+    // Добавляем локальное видео в контейнер
+    const videoContainer = document.getElementById('videoContainer');
+    videoContainer.appendChild(localVideo);
 
     audioParams = { track: stream.getAudioTracks()[0], ...audioParams };
     videoParams = { track: stream.getVideoTracks()[0], ...videoParams };
@@ -216,6 +229,7 @@ const VideoCall = () => {
     });
   };
 
+
   const connectRecvTransport = async (consumerTransport, remoteProducerId, serverConsumerTransportId) => {
     await socketRef.current.emit(
       'consume',
@@ -226,11 +240,11 @@ const VideoCall = () => {
       },
       async ({ params }) => {
         if (params.error) {
-          console.log('Cannot Consume');
+          console.log('Не удается потреблять');
           return;
         }
 
-        console.log(`Consumer Params ${params}`);
+        console.log(`Параметры потребителя ${params}`);
         const consumer = await consumerTransport.consume({
           id: params.id,
           producerId: params.producerId,
@@ -247,44 +261,38 @@ const VideoCall = () => {
             consumer
           }
         ];
-
+        //МЕГА КОСТЫЛЬ ДЛЯ ПРАВИЛЬНОГО РЕНДЕРА
         const newElem = document.createElement('div');
         newElem.setAttribute('id', `td-${remoteProducerId}`);
 
-        if (params.kind === 'audio') {
-          newElem.innerHTML = `<audio id="${remoteProducerId}" autoplay></audio>`;
-        } else {
-          newElem.setAttribute('class', 'remoteVideo');
-          newElem.innerHTML = `<video id="${remoteProducerId}" autoplay class="video"></video>`;
+        const mediaElem = document.createElement(params.kind === 'audio' ? 'audio' : 'video');
+        mediaElem.setAttribute('id', `${params.kind === 'audio' ? 'audio' : 'video'}-${remoteProducerId}`);
+        mediaElem.setAttribute('autoplay', '');
+        if (params.kind === 'video') {
+          mediaElem.classList.add('video-descendant');
         }
+        newElem.appendChild(mediaElem);
 
         const videoContainer = document.getElementById('videoContainer');
         videoContainer.appendChild(newElem);
+
         const { track } = consumer;
-        document.getElementById(remoteProducerId).srcObject = new MediaStream([track]);
+        mediaElem.srcObject = new MediaStream([track]);
+
         socketRef.current.emit('consumer-resume', { serverConsumerId: params.serverConsumerId });
       }
     );
   };
-
+  
   return (
-    <div id="video">
-      <table className="mainTable">
-        <tbody>
-          <tr>
-            <td className="localColumn">
-              <video id="localVideo" autoPlay className="video" muted></video>
-            </td>
-            <td className="remoteColumn">
-              <div id="videoContainer"></div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <div style={{ textAlign: 'center', marginTop: '20px' }}>
-        <h2>Access Code: {accessCode}</h2>
-      </div>
+  <div id="video">
+    <div className="video-container" id="videoContainer">
     </div>
+    <div style={{ textAlign: 'center', marginTop: '20px' }}>
+      <h2>Код доступа: {accessCode}</h2>
+    </div>
+  </div>
+
   );
 };
 

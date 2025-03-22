@@ -1,0 +1,14 @@
+.video-container {
+    display: flex;
+    flex-direction: row; /* Устанавливаем направление flex в ряд */
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap; /* Разрешаем перенос элементов на новую строку */
+}
+
+.video-descendant {
+    width: 320px; /* Фиксированная ширина видео */
+    height: 240px; /* Фиксированная высота видео */
+    object-fit: cover; /* Чтобы видео заполняло контейнер */
+    margin: 10px; /* Добавляем отступы между видео */
+}
