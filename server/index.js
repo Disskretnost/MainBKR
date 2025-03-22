@@ -16,7 +16,7 @@ const path = require('path');
 
 
 app.use(cors({
-  origin: 'http://localhost:3000', // Замените на адрес вашего React-приложения
+  origin: ['http://localhost:3000', 'https://kucherenkoaleksanr.ru'], 
   credentials: true  // Разрешите отправку кук (если это действительно нужно)
 }));
 app.use(express.json());  // Для парсинга JSON в запросах
@@ -402,12 +402,13 @@ connections.on('connection', async socket => {
 const createWebRtcTransport = async (router) => {
   return new Promise(async (resolve, reject) => {
     try {
+      console.log(process.env.MEDIA_SERVER);
       // https://mediasoup.org/documentation/v3/mediasoup/api/#WebRtcTransportOptions
       const webRtcTransport_options = {
         listenIps: [
           {
             ip: '0.0.0.0', // replace with relevant IP address
-            announcedIp: '127.0.0.1',
+            announcedIp: process.env.MEDIA_SERVER,
           }
         ],
         enableUdp: true,

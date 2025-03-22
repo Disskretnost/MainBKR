@@ -3,7 +3,6 @@ import io from 'socket.io-client';
 import { Device } from 'mediasoup-client';
 import { useSelector } from 'react-redux'; // Import useSelector
 import './VideoConference.css';
-//const roomName = 'test1'; // Room name is hardcoded to 'test1'
 
 let device;
 let rtpCapabilities;
@@ -36,8 +35,9 @@ const VideoCall = () => {
   const socketIdRef = useRef(null); // Ref to hold the socket ID
   
   useEffect(() => {
+    const WEBSOCKET_URL = process.env.REACT_APP_WEBSOCKET_URL || 'ws://localhost/mediasoup';
+    socketRef.current = io(WEBSOCKET_URL);
 
-    socketRef.current = io('ws://localhost/mediasoup');
     socketRef.current.on('connection-success', ({ socketId }) => {
       console.log(socketId);
       socketIdRef.current = socketId; // Store socket ID in ref

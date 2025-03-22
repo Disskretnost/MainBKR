@@ -48,6 +48,9 @@ services:
       depends_on:
         - server
         - db
+      environment:
+      - REACT_APP_API_URL=https://kucherenkoaleksanr.ru/api
+      - REACT_APP_WEBSOCKET_URL=wss://kucherenkoaleksanr.ru/mediasoup
       networks:
         - app_network
 
