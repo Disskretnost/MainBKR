@@ -1,14 +1,53 @@
-.video-container {
+.video-conference-container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    background-color: #252827; 
+  }
+  
+  .video-container {
     display: flex;
-    flex-direction: row; /* Устанавливаем направление flex в ряд */
+    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    flex-wrap: wrap; /* Разрешаем перенос элементов на новую строку */
-}
-
-.video-descendant {
-    width: 320px; /* Фиксированная ширина видео */
-    height: 240px; /* Фиксированная высота видео */
-    object-fit: cover; /* Чтобы видео заполняло контейнер */
-    margin: 10px; /* Добавляем отступы между видео */
-}
+    gap: 16px;
+    padding: 16px;
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    padding-bottom: 80px; /* Добавляем отступ для кнопки */
+  }
+  
+  .video-descendant {
+    width: 300px;
+    height: 225px;
+    object-fit: cover;
+    background-color: #000;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .access-panel-wrapper {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.1), transparent);
+    z-index: 100;
+  }
+  
+  /* Адаптивные стили */
+  @media (max-width: 768px) {
+    .video-descendant {
+      width: 100%;
+      height: auto;
+      max-height: 200px;
+    }
+    
+    .video-container {
+      padding-bottom: 60px;
+    }
+  }
