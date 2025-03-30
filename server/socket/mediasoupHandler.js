@@ -5,11 +5,8 @@ const participantService = require('../services/ParticipantService');
 // Основные модули Node.js
 const path = require('path');
 const fs = require('fs'); // Убедитесь, что fs импортирован
-
-// Для работы с документами Word
-const docx = require("docx");
-const { Document, Packer, Paragraph, TextRun }= require("docx");
-
+const officegen = require('officegen');
+const transcriptService = require('./../services/transcript-service');
 
 // Mediasoup worker and room management
 let worker;
@@ -393,72 +390,59 @@ const initializeSocketHandlers = (io) => {
       await consumer.resume();
     });
 
-    socket.on('disconnect', async() => {
-        const userData = socketToUserMap.get(socket.id);
-    
-        if (!userData) {
-          console.log(`No user data found for socket: ${socket.id}`);
-          return;
+    socket.on('disconnect', async () => {
+      const userData = socketToUserMap.get(socket.id);
+  
+      if (!userData) {
+        console.log(`No user data found for socket: ${socket.id}`);
+        return;
+      }
+  
+      console.log(`User disconnecting:`, userData);
+  
+      // 2. Change status in the database
+      await participantService.deactivateParticipant(
+        userData.roomName,
+        userData.id
+      );
+  
+      // 3. Check if there are any online users in the room
+      const onlineParticipants = await participantService.getOnlineParticipants(userData.roomName);
+  
+      // 4. Clear local data
+      socketToUserMap.delete(socket.id);
+      cleanupPeer(socket.id);
+  
+      if (onlineParticipants.length === 0) {
+  
+        try {
+          const transcripts = await transcriptService.getTranscriptsForConference(userData.roomName);
+          let docx = officegen('docx');
+          for (const transcript of transcripts) {
+            let pObj = docx.createP();
+            pObj.addText(`User ID: ${transcript.userId}, Message: ${transcript.message}`, { font_size: 12 });
+          }
+  
+
+          const timestamp = Date.now();
+          const filename = `document_${userData.roomName}_${timestamp}.docx`;
+          const outputPath = path.join(__dirname, '..', '..', 'chat_storage', filename);
+  
+          const out = fs.createWriteStream(outputPath);
+          docx.generate(out);
+  
+        } catch (error) {
+          console.error('Error generating Word document from database:', error);
         }
-    
-        console.log(`User disconnecting:`, userData);
-    
-        // 2. Меняем статус в базе данных
-        await participantService.deactivateParticipant(
-          userData.roomName, 
-          userData.id
-        );
-        // 2. Проверяем, есть ли еще онлайн-пользователи в комнате
-        const onlineParticipants = await participantService.getOnlineParticipants(userData.roomName);
-        
-       
-    
-        // 3. Очищаем локальные данные
-        socketToUserMap.delete(socket.id);
-        cleanupPeer(socket.id);
-    
-        console.log(`User ${userData.Id} marked as offline in room ${userData.roomName}`);
+      } else {
+        console.log(`Room ${userData.roomName} still has online participants.`);
+      }
     });
 
     socket.on('newMessage', async (messageData) => {
       try {
           const { roomId, userId, text } = messageData;
-
-          console.log(`Получено новое сообщение:`);
-          console.log(`  roomId: ${roomId}`);
-          console.log(`  userId: ${userId}`);
-          console.log(`  text: ${text}`);
-
-          const doc = new Document({
-              sections: [
-                  {
-                      properties: {},
-                      children: [
-                          new Paragraph({
-                              children: [
-                                  new TextRun(text), // Добавляем текст сообщения
-                              ],
-                          }),
-                      ],
-                  },
-              ],
-          });
-
-          // Формируем путь на уровень выше
-          const parentDir = path.join(__dirname, '..', '..', 'chat_storage');
-
-          const fileName = `Room_${roomId}_${Date.now()}.docx`; // Добавляем roomId и timestamp к имени файла
-          const filePath = path.join(parentDir, fileName);
-
-          // Сохраняем
-          Packer.toBuffer(doc).then((buffer) => {
-              fs.writeFileSync(filePath, buffer);
-              console.log(`Файл сохранён по пути: ${filePath}`);
-          }).catch(err => {
-              console.error("Ошибка при записи файла:", err);
-          });
-
-
+          const transcript = await transcriptService.createTranscript(userId, roomId, text);
       } catch (error) {
           console.error('Ошибка обработки сообщения (до записи в Word):', error);
       }
