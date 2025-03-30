@@ -15,6 +15,7 @@ const mediasoup = require('mediasoup');
 const path = require('path');
 const { initializeSocketHandlers } = require('./socket/mediasoupHandler');
 
+
 app.use(cors({
   origin: ['http://localhost:3000', 'https://kucherenkoaleksanr.ru'], 
   credentials: true  // Разрешите отправку кук (если это действительно нужно)
@@ -39,6 +40,7 @@ const io = new Server(server, {
 });
 
 initializeSocketHandlers(io);
+//messageHandler(io);
 
 // Запуск сервера
 const start = async () => {

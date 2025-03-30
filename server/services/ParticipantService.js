@@ -27,6 +27,24 @@ class ParticipantService {
       throw error;
     }
   }
+
+  async getOnlineParticipants(conferenceId) {
+    try {
+      const participants = await Participant.findAll({
+        where: {
+          conferenceId,
+          isOnline: true
+        },
+        attributes: ['id', 'userId', 'conferenceId', 'joinedAt'], // Только поля из DTO
+        order: [['joinedAt', 'ASC']]
+      });
+
+      return participants.map(p => new ParticipantDTO(p));
+    } catch (error) {
+      console.error('Get online participants error:', error);
+      throw ApiError.DatabaseError('Ошибка получения онлайн-участников');
+    }
+  }
 }
 
 module.exports = new ParticipantService();

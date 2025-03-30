@@ -8,7 +8,7 @@ export default class VideoConferenceManager {
     this.callbacks = callbacks;
     this.id = id;
     this.recognition = null;
-    
+    this.initSpeechRecognition();
     this.device = null;
     this.rtpCapabilities = null;
     this.producerTransport = null;
@@ -42,59 +42,60 @@ export default class VideoConferenceManager {
       this.getLocalStream();
     });
 
-    this.socket.on('new-producer', ({ producerId }) => this.signalNewConsumerTransport(producerId));
+    this.socket.on('new-producer', ({ producerId,id }) => this.signalNewConsumerTransport(producerId, id));
 
     this.socket.on('producer-closed', ({ remoteProducerId }) => {
       this.handleProducerClosed(remoteProducerId);
     });
   }
 
-    initSpeechRecognition() {
-      if (!('webkitSpeechRecognition' in window)) {
-        console.warn('Браузер не поддерживает распознавание голоса');
-        return;
-      }
-    
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      this.recognition = new SpeechRecognition();
-      this.recognition.continuous = true;
-      this.recognition.interimResults = false; // Ключевое изменение: отключаем промежуточные результаты
-      this.recognition.lang = 'ru-RU';
-    
-      this.recognition.onresult = (event) => {
-        let finalTranscript = '';
-    
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;  // Накапливаем только финальные расшифровки
-          }
-        }
-    
-        // Вызываем callback только если есть финальный результат
-        if (finalTranscript) {
-          if (this.callbacks && this.callbacks.onSpeechRecognized) {
-            this.callbacks.onSpeechRecognized(finalTranscript);
-          } else {
-            console.warn("onSpeechRecognized callback not defined in this.callbacks");
-          }
-        }
-      };
-    
-      this.recognition.onerror = (event) => {
-        console.error('Ошибка распознавания:', event.error);
-      };
-    
-      this.recognition.onstart = () => {
-        console.log("Speech recognition started");
-      };
-    
-      this.recognition.onend = () => {
-        console.log("Speech recognition ended, restarting...");
-        this.recognition.start(); // Перезапускаем по окончанию
-      };
-    
-      this.recognition.start();
+  initSpeechRecognition() {
+    if (!('webkitSpeechRecognition' in window)) {
+      console.warn('Браузер не поддерживает распознавание голоса');
+      return;
     }
+  
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    this.recognition = new SpeechRecognition();
+    this.recognition.continuous = true;
+    this.recognition.interimResults = false;
+    this.recognition.lang = 'ru-RU';
+  
+    this.recognition.onresult = (event) => {
+      let finalTranscript = '';
+  
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+  
+      if (finalTranscript && this.socket) {
+        // Отправка через существующий сокет-канал
+        this.socket.emit('newMessage', {
+          userId: this.id,
+          roomId: this.roomName,
+          text: finalTranscript,
+          isSpeech: true 
+        });
+      }
+    };
+  
+    this.recognition.onerror = (event) => {
+      console.error('Ошибка распознавания:', event.error);
+    };
+  
+    this.recognition.onstart = () => {
+      console.log("Распознавание речи запущено");
+    };
+  
+    this.recognition.onend = () => {
+      console.log("Распознавание завершено, перезапуск...");
+      this.recognition.start();
+    };
+  
+    this.recognition.start();
+  }
 
   async getLocalStream() {
     try {
@@ -163,7 +164,8 @@ export default class VideoConferenceManager {
             {
               kind: parameters.kind,
               rtpParameters: parameters.rtpParameters,
-              appData: parameters.appData
+              appData: parameters.appData,
+              id: this.id
             },
             ({ id, producersExist }) => {
               callback({ id });
@@ -188,14 +190,15 @@ export default class VideoConferenceManager {
       this.audioProducer.on('transportclose', () => this.callbacks.onTransportClose('audio'));
       this.videoProducer.on('trackended', () => this.callbacks.onTrackEnded('video'));
       this.videoProducer.on('transportclose', () => this.callbacks.onTransportClose('video'));
-      this.initSpeechRecognition();
+
     } catch (error) {
       console.error('Error connecting send transport:', error);
       this.callbacks.onError('Ошибка подключения медиапотоков');
     }
   }
 
-  async signalNewConsumerTransport(remoteProducerId) {
+  async signalNewConsumerTransport(remoteProducerId, clientId) {
+    console.log("Пизда",clientId)
     if (this.consumingTransports.includes(remoteProducerId)) return;
 
     this.consumingTransports.push(remoteProducerId);
@@ -231,8 +234,11 @@ export default class VideoConferenceManager {
   }
 
   getProducers() {
-    this.socket.emit('getProducers', (producerIds) => {
-      producerIds.forEach(id => this.signalNewConsumerTransport(id));
+    this.socket.emit('getProducers', (producerInfoList) => { // Ожидаем массив объектов
+  
+      producerInfoList.forEach(info => {
+        this.signalNewConsumerTransport(info.producerId, info.clientId); // Передаём producerId и clientId
+      });
     });
   }
 

@@ -10,6 +10,8 @@ services:
     working_dir: /opt/server
     env_file:
       - .env
+    volumes:
+      - ./chat_storage:/opt/chat_storage
     ports:
       - "2000-2020:2000-2020" 
       - "4200:4200"  

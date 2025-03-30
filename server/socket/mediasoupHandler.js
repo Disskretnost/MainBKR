@@ -2,6 +2,14 @@
 const mediasoup = require('mediasoup');
 const { v4: uuidv4 } = require('uuid');
 const participantService = require('../services/ParticipantService');
+// Основные модули Node.js
+const path = require('path');
+const fs = require('fs'); // Убедитесь, что fs импортирован
+
+// Для работы с документами Word
+const docx = require("docx");
+const { Document, Packer, Paragraph, TextRun }= require("docx");
+
 
 // Mediasoup worker and room management
 let worker;
@@ -162,12 +170,12 @@ const getTransport = (socketId) => {
   return producerTransport.transport;
 };
 
-const informConsumers = (roomName, socketId, id) => {
-  console.log(`just joined, id ${id} ${roomName}, ${socketId}`);
+const informConsumers = (roomName, socketId, producerid, id) => {
+  console.log(`just joined, id ${producerid} ${roomName}, ${socketId}`);
   producers.forEach(producerData => {
     if (producerData.socketId !== socketId && producerData.roomName === roomName) {
       const producerSocket = peers[producerData.socketId].socket;
-      producerSocket.emit('new-producer', { producerId: id });
+      producerSocket.emit('new-producer', { producerId: producerid, id: id });
     }
   });
 };
@@ -207,18 +215,29 @@ const cleanupPeer = (socketId) => {
 const getProducersList = (socketId) => {
   const { roomName } = peers[socketId];
   let producerList = [];
-  
+
   producers.forEach(producerData => {
     if (producerData.socketId !== socketId && producerData.roomName === roomName) {
-      producerList = [...producerList, producerData.producer.id];
+      // Получаем userId из socketToUserMap по socketId producer-а
+      const userInfo = socketToUserMap.get(producerData.socketId);
+      console.log(userInfo)
+
+      // Проверяем, найден ли пользователь в socketToUserMap
+      if (userInfo) {
+        producerList = [...producerList, { producerId: producerData.producer.id, clientId: userInfo.id}]; // Возвращаем объект с userId
+      } else {
+        console.warn(`Не найден userId для socketId: ${producerData.socketId}`);
+        // Можно вернуть null или пропустить producer, если userId не найден
+        // producerList = [...producerList, { producerId: producerData.producer.id, clientId: null }]; // Или вернуть null
+      }
     }
   });
-  
+
   return producerList;
 };
 
 const initializeSocketHandlers = (io) => {
-  // Create worker when initializing
+  // Create worker when initializings
   worker = createWorker();
 
   const connections = io.of('/mediasoup');
@@ -274,7 +293,7 @@ const initializeSocketHandlers = (io) => {
       getTransport(socket.id).connect({ dtlsParameters });
     });
 
-    socket.on('transport-produce', async ({ kind, rtpParameters }, callback) => {
+    socket.on('transport-produce', async ({ kind, rtpParameters,id }, callback) => {
       try {
         const producer = await getTransport(socket.id).produce({
           kind,
@@ -283,7 +302,7 @@ const initializeSocketHandlers = (io) => {
 
         const { roomName } = peers[socket.id];
         addProducer(socket.id, producer, roomName);
-        informConsumers(roomName, socket.id, producer.id);
+        informConsumers(roomName, socket.id, producer.id, id);
 
         console.log('Producer ID: ', producer.id, producer.kind);
 
@@ -389,6 +408,10 @@ const initializeSocketHandlers = (io) => {
           userData.roomName, 
           userData.id
         );
+        // 2. Проверяем, есть ли еще онлайн-пользователи в комнате
+        const onlineParticipants = await participantService.getOnlineParticipants(userData.roomName);
+        
+       
     
         // 3. Очищаем локальные данные
         socketToUserMap.delete(socket.id);
@@ -396,6 +419,52 @@ const initializeSocketHandlers = (io) => {
     
         console.log(`User ${userData.Id} marked as offline in room ${userData.roomName}`);
     });
+
+    socket.on('newMessage', async (messageData) => {
+      try {
+          const { roomId, userId, text } = messageData;
+
+          console.log(`Получено новое сообщение:`);
+          console.log(`  roomId: ${roomId}`);
+          console.log(`  userId: ${userId}`);
+          console.log(`  text: ${text}`);
+
+          const doc = new Document({
+              sections: [
+                  {
+                      properties: {},
+                      children: [
+                          new Paragraph({
+                              children: [
+                                  new TextRun(text), // Добавляем текст сообщения
+                              ],
+                          }),
+                      ],
+                  },
+              ],
+          });
+
+          // Формируем путь на уровень выше
+          const parentDir = path.join(__dirname, '..', '..', 'chat_storage');
+
+          const fileName = `Room_${roomId}_${Date.now()}.docx`; // Добавляем roomId и timestamp к имени файла
+          const filePath = path.join(parentDir, fileName);
+
+          // Сохраняем
+          Packer.toBuffer(doc).then((buffer) => {
+              fs.writeFileSync(filePath, buffer);
+              console.log(`Файл сохранён по пути: ${filePath}`);
+          }).catch(err => {
+              console.error("Ошибка при записи файла:", err);
+          });
+
+
+      } catch (error) {
+          console.error('Ошибка обработки сообщения (до записи в Word):', error);
+      }
+  });
+    
+    
   });
 };
 
