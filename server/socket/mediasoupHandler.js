@@ -439,14 +439,14 @@ const initializeSocketHandlers = (io) => {
     
           const out = fs.createWriteStream(outputPath);
           docx.generate(out);
-          
+          await ConferenceFileService.addFileToConference(
+            userData.roomName, // conferenceId
+            filename,
+            outputPath
+          );
+          await transcriptService.deleteTranscriptsForConference(userData.roomName);
+
           out.on('close', async () => {
-            await transcriptService.deleteTranscriptsForConference(userData.roomName);
-            await ConferenceFileService.addFileToConference(
-              userData.roomName, // conferenceId
-              filename,
-              outputPath
-            );
             console.log(`Файл ${filename} успешно сохранен и записан в БД`);
           });
     
@@ -461,7 +461,9 @@ const initializeSocketHandlers = (io) => {
     socket.on('newMessage', async (messageData) => {
       try {
           const { roomId, userId, text } = messageData;
+          console.log(messageData)
           const transcript = await transcriptService.createTranscript(userId, roomId, text);
+          console.log(transcript);
       } catch (error) {
           console.error('Ошибка обработки сообщения (до записи в Word):', error);
       }
