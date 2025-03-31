@@ -7,6 +7,7 @@ const path = require('path');
 const fs = require('fs'); // Убедитесь, что fs импортирован
 const officegen = require('officegen');
 const transcriptService = require('./../services/transcript-service');
+const ConferenceFileService = require('../services/conferenceFile-service');
 
 // Mediasoup worker and room management
 let worker;
@@ -392,45 +393,63 @@ const initializeSocketHandlers = (io) => {
 
     socket.on('disconnect', async () => {
       const userData = socketToUserMap.get(socket.id);
-  
+    
       if (!userData) {
         console.log(`No user data found for socket: ${socket.id}`);
         return;
       }
-  
+    
       console.log(`User disconnecting:`, userData);
-  
+    
       // 2. Change status in the database
       await participantService.deactivateParticipant(
         userData.roomName,
         userData.id
       );
-  
+    
       // 3. Check if there are any online users in the room
       const onlineParticipants = await participantService.getOnlineParticipants(userData.roomName);
-  
+    
       // 4. Clear local data
       socketToUserMap.delete(socket.id);
       cleanupPeer(socket.id);
-  
+    
       if (onlineParticipants.length === 0) {
-  
         try {
           const transcripts = await transcriptService.getTranscriptsForConference(userData.roomName);
           let docx = officegen('docx');
+          
+          let lastUserId = null;
+          let currentParagraph = null;
+          
           for (const transcript of transcripts) {
-            let pObj = docx.createP();
-            pObj.addText(`User ID: ${transcript.userId}, Message: ${transcript.message}`, { font_size: 12 });
-          }
-  
+            // Если пользователь изменился или это первое сообщение, создаем новый параграф
+            if (transcript.userId !== lastUserId) {
+              currentParagraph = docx.createP();
+              currentParagraph.addText(`User ID: ${transcript.userId}: `, { font_size: 12, bold: true });
+              lastUserId = transcript.userId;
+            }
 
+            currentParagraph.addText(transcript.message + ' ', { font_size: 12 });
+          }
+    
           const timestamp = Date.now();
           const filename = `document_${userData.roomName}_${timestamp}.docx`;
           const outputPath = path.join(__dirname, '..', '..', 'chat_storage', filename);
-  
+    
           const out = fs.createWriteStream(outputPath);
           docx.generate(out);
-  
+          
+          out.on('close', async () => {
+            await transcriptService.deleteTranscriptsForConference(userData.roomName);
+            await ConferenceFileService.addFileToConference(
+              userData.roomName, // conferenceId
+              filename,
+              outputPath
+            );
+            console.log(`Файл ${filename} успешно сохранен и записан в БД`);
+          });
+    
         } catch (error) {
           console.error('Error generating Word document from database:', error);
         }

@@ -3,6 +3,7 @@ const Conference = require('./Conference');  // Импортируем моде�
 const Token = require('./Token');  // Импортируем модель Token
 const Participant = require('./Participant')
 const Transcript = require('./Transcript')
+const ConferenceFile = require("./ConferenceFile")
 
 // Экспортируем все модели для использования в других частях приложения
 module.exports = {
@@ -10,5 +11,6 @@ module.exports = {
   Conference,
   Token,
   Participant,
-  Transcript
+  Transcript,
+  ConferenceFile
 };

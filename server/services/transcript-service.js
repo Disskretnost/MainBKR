@@ -39,18 +39,22 @@ class TranscriptService {
     }
   
   
-    async deleteTranscript(transcriptId) {
-      try {
-        const transcript = await Transcript.findByPk(transcriptId);
-        if (!transcript) {
-          throw ApiError.NotFound('Transcript not found');
+    async deleteTranscriptsForConference(conferenceId) {
+        try {
+          const result = await Transcript.destroy({
+            where: { conferenceId: conferenceId }
+          });
+          
+          if (result === 0) {
+            throw ApiError.NotFound('No transcripts found for this conference');
+          }
+          
+          return { success: true, deletedCount: result };
+        } catch (error) {
+          console.error(error);
+          throw error;
         }
-        await transcript.destroy();
-      } catch (error) {
-        console.error(error);
-        throw error;
       }
-    }
   }
   
   module.exports = new TranscriptService();
