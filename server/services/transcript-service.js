@@ -29,6 +29,7 @@ class TranscriptService {
           order: [['timestamp', 'ASC']], // Sort by timestamp in ascending order
           // No include here
         });
+        console.log(transcripts);
   
         return transcripts.map(transcript => new TranscriptDTO(transcript)); // Map to DTOs
   
@@ -44,11 +45,6 @@ class TranscriptService {
           const result = await Transcript.destroy({
             where: { conferenceId: conferenceId }
           });
-          
-          if (result === 0) {
-            throw ApiError.NotFound('No transcripts found for this conference');
-          }
-          
           return { success: true, deletedCount: result };
         } catch (error) {
           console.error(error);

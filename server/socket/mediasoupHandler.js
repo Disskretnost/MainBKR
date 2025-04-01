@@ -393,28 +393,28 @@ const initializeSocketHandlers = (io) => {
 
     socket.on('disconnect', async () => {
       const userData = socketToUserMap.get(socket.id);
-    
+      
       if (!userData) {
-        console.log(`No user data found for socket: ${socket.id}`);
+        console.log(`Не найдены данные пользователя для сокета: ${socket.id}`);
         return;
       }
     
-      console.log(`User disconnecting:`, userData);
+      console.log(`Пользователь отключается:`, userData);
     
-      // 2. Change status in the database
+      // 1. Сначала получаем текущее количество онлайн-участников
+      const onlineParticipants = await participantService.getOnlineParticipants(userData.roomName);
+      
+      // 2. Проверяем, был ли это последний пользователь ПЕРЕД его деактивацией
+      const isLastUser = onlineParticipants.length === 1;
+    
+      // 3. Деактивируем текущего участника
       await participantService.deactivateParticipant(
         userData.roomName,
         userData.id
       );
     
-      // 3. Check if there are any online users in the room
-      const onlineParticipants = await participantService.getOnlineParticipants(userData.roomName);
-    
-      // 4. Clear local data
-      socketToUserMap.delete(socket.id);
-      cleanupPeer(socket.id);
-    
-      if (onlineParticipants.length === 0) {
+      // 4. Если это был последний пользователь - генерируем документ
+      if (isLastUser) {
         try {
           const transcripts = await transcriptService.getTranscriptsForConference(userData.roomName);
           let docx = officegen('docx');
@@ -423,13 +423,11 @@ const initializeSocketHandlers = (io) => {
           let currentParagraph = null;
           
           for (const transcript of transcripts) {
-            // Если пользователь изменился или это первое сообщение, создаем новый параграф
             if (transcript.userId !== lastUserId) {
               currentParagraph = docx.createP();
-              currentParagraph.addText(`User ID: ${transcript.userId}: `, { font_size: 12, bold: true });
+              currentParagraph.addText(`ID пользователя: ${transcript.userId}: `, { font_size: 12, bold: true });
               lastUserId = transcript.userId;
             }
-
             currentParagraph.addText(transcript.message + ' ', { font_size: 12 });
           }
     
@@ -440,22 +438,26 @@ const initializeSocketHandlers = (io) => {
           const out = fs.createWriteStream(outputPath);
           docx.generate(out);
           await ConferenceFileService.addFileToConference(
-            userData.roomName, // conferenceId
+            userData.roomName,
             filename,
             outputPath
           );
           await transcriptService.deleteTranscriptsForConference(userData.roomName);
-
+    
           out.on('close', async () => {
-            console.log(`Файл ${filename} успешно сохранен и записан в БД`);
+            console.log(`Файл ${filename} успешно сохранён и записан в БД`);
           });
     
         } catch (error) {
-          console.error('Error generating Word document from database:', error);
+          console.error('Ошибка при генерации Word-документа из базы данных:', error);
         }
       } else {
-        console.log(`Room ${userData.roomName} still has online participants.`);
+        console.log(`В комнате ${userData.roomName} ещё остались участники.`);
       }
+    
+      // 5. Очищаем локальные данные В САМОМ КОНЦЕ
+      socketToUserMap.delete(socket.id);
+      cleanupPeer(socket.id);
     });
 
     socket.on('newMessage', async (messageData) => {
