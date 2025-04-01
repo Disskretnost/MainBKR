@@ -95,6 +95,29 @@ export default class VideoConferenceManager {
     };
   
     this.recognition.start();
+
+    /* const messages = [
+      'Привет',
+      'Как дела?',
+      'Что нового?',
+      'Давайте начнём',
+      'Я готов'
+    ];
+  
+    setInterval(() => {
+      if (!this.socket) return;
+      
+      const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+      
+      this.socket.emit('newMessage', {
+        userId: this.id,
+        roomId: this.roomName,
+        text: randomMessage,
+        isSpeech: true
+      });
+      
+    }, 5000); // Отправка каждые 5 секунд */
+  
   }
 
   async getLocalStream() {

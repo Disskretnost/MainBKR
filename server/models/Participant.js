@@ -30,7 +30,7 @@ const Participant = sequelize.define('participant', {
   },
   isOnline: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false
+    defaultValue: true
   },  
   joinedAt: {
     type: DataTypes.DATE,

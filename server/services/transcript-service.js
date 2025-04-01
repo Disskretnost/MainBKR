@@ -29,7 +29,6 @@ class TranscriptService {
           order: [['timestamp', 'ASC']], // Sort by timestamp in ascending order
           // No include here
         });
-        console.log(transcripts);
   
         return transcripts.map(transcript => new TranscriptDTO(transcript)); // Map to DTOs
   

@@ -38,11 +38,26 @@ class ParticipantService {
         attributes: ['id', 'userId', 'conferenceId', 'joinedAt'], // Только поля из DTO
         order: [['joinedAt', 'ASC']]
       });
-
+      //console.log(participants)
       return participants.map(p => new ParticipantDTO(p));
     } catch (error) {
       console.error('Get online participants error:', error);
       throw ApiError.DatabaseError('Ошибка получения онлайн-участников');
+    }
+  }
+
+  async getAllParticipants() {
+    try {
+      const participants = await Participant.findAll({
+        attributes: ['id', 'userId', 'conferenceId', 'isOnline', 'joinedAt'],
+        order: [['joinedAt', 'ASC']]
+      });
+
+      console.log('Все участники:', participants);
+      return participants.map(p => new ParticipantDTO(p));
+    } catch (error) {
+      console.error('Get all participants error:', error);
+      throw ApiError.DatabaseError('Ошибка получения всех участников');
     }
   }
 }
