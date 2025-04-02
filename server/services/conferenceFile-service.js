@@ -52,10 +52,6 @@ class ConferenceFileService {
         where: { conferenceId } 
       });
 
-      if (!file) {
-        throw ApiError.NotFound('Файл для данной конференции не найден');
-      }
-
       await file.destroy();
       return { success: true };
     } catch (error) {
@@ -73,6 +69,12 @@ class ConferenceFileService {
       console.error('Ошибка при получении файлов:', error);
       throw error;
     }
+  }
+
+
+  async getFileForDownload(fileId) {
+    const file = await ConferenceFile.findByPk(fileId);
+    return new ConferenceFileDTO(file);
   }
 }
 

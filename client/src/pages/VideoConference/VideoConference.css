@@ -50,4 +50,46 @@
     .video-container {
       padding-bottom: 60px;
     }
+
+    
+  }
+
+
+  .access-panel-container {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    z-index: 1000;
+    width: 120px;
+    margin: 0 auto;
+  }
+
+
+  .exit-call-button {
+    margin-left: 150px;
+    background-color: #d32f2f; /* Красный цвет */
+    color: white;
+    padding: 12px;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    transition: all 0.3s ease;
+  }
+  
+  .exit-call-button:hover {
+    background-color: #b71c1c; /* Темнее при наведении */
+    transform: scale(1.1);
+  }
+  
+  /* Убеждаемся, что иконка внутри остаётся белой */
+  .exit-call-button svg {
+    fill: white;
+  }
+  
+  /* Состояние при выходе (делаем полупрозрачной и отключаем клики) */
+  .exit-call-button:disabled {
+    opacity: 0.5;
+    pointer-events: none;
   }

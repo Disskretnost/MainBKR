@@ -39,7 +39,7 @@ const AccessCodePanel = ({ accessCode }) => {
   };
 
   return (
-    <div className="access-panel-container">
+    <>
       <IconButton
         color="primary"
         className="access-code-icon"
@@ -99,7 +99,7 @@ const AccessCodePanel = ({ accessCode }) => {
           {error}
         </Alert>
       </Snackbar>
-    </div>
+    </>
   );
 };
 

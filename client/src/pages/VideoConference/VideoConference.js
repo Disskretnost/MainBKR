@@ -1,15 +1,22 @@
-import React, { useEffect, useRef } from 'react';
+
+import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import VideoConferenceManager from '../../socket/VideoConferenceManager';
 import AccessCodePanel from '../../components/AccessCodePanel/AccessCodePanel';
 import './VideoConference.css';
+import { Button, IconButton } from '@mui/material';
+import CallEndIcon from '@mui/icons-material/CallEnd';
+import VpnKeyIcon from '@mui/icons-material/VpnKey';
 
 const VideoCall = () => {
-  const roomName = useSelector((state) => state.conference.id); //id комнаты 
-  const accessCode = useSelector((state) => state.conference.accessCode); //id комнаты  токен доступа
-  const {id} = useSelector(state => state.auth.user);
+  const roomName = useSelector((state) => state.conference.id);
+  const accessCode = useSelector((state) => state.conference.accessCode);
+  const { id } = useSelector(state => state.auth.user);
   const conferenceManagerRef = useRef(null);
   const videoContainerRef = useRef(null);
+  const navigate = useNavigate();
+  const [isExiting, setIsExiting] = useState(false);
 
   const callbacks = {
     onLocalStream: (stream, socketId) => {
@@ -55,12 +62,19 @@ const VideoCall = () => {
       console.log(`${type} transport ended`);
     },
     onCleanup: () => {
-      // Дополнительная очистка при необходимости
+      console.log('Все ресурсы очищены');
     },
     onSpeechRecognized: (text) => {
       console.log('Распознано:', text);
-      // Можно отображать распознанный текст в интерфейсе
     },
+  };
+
+  const handleExit = () => {
+    setIsExiting(true);
+    if (conferenceManagerRef.current) {
+      conferenceManagerRef.current.cleanup();
+    }
+    navigate('/'); // Переход на главную страницу
   };
 
   useEffect(() => {
@@ -85,7 +99,17 @@ const VideoCall = () => {
     <div className="video-conference-container">
       <div className="video-container" ref={videoContainerRef} />
       <div className="access-panel-wrapper">
-        <AccessCodePanel accessCode={accessCode} />
+        <div className="access-panel-container">
+            <AccessCodePanel accessCode={accessCode} />
+            <IconButton
+              onClick={handleExit}
+              disabled={isExiting}
+              className="exit-call-button"
+              aria-label="Выйти из чата"
+            >
+              <CallEndIcon fontSize="large" />
+            </IconButton>
+        </div>
       </div>
     </div>
   );
