@@ -422,11 +422,11 @@ const initializeSocketHandlers = (io) => {
             // Если пользователь изменился или это первое сообщение, создаем новый параграф
             if (transcript.userId !== lastUserId) {
               currentParagraph = docx.createP();
-              currentParagraph.addText(`User ID: ${transcript.userId}: `, { font_size: 12, bold: true });
+              currentParagraph.addText(`${transcript.username}: `, { font_size: 12, bold: true });
               lastUserId = transcript.userId;
             }
 
-            currentParagraph.addText(transcript.message + ' ', { font_size: 12 });
+            currentParagraph.addText(transcript.message + '. ', { font_size: 12 });
           }
     
           const timestamp = Date.now();

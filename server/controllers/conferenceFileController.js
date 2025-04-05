@@ -4,7 +4,10 @@ class ConferenceFileController {
   // Получение всех файлов (без пагинации)
   async getAllFiles(req, res, next) {
     try {
-      const files = await conferenceFileService.getAllFiles();
+      const { id } = req.params;
+      const files = await conferenceFileService.getAllFiles(id);
+      //console.log(files);
+      
       return res.status(200).json(files);
     } catch (e) {
       next(e);

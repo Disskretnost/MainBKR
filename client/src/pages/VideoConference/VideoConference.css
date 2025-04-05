@@ -1,95 +1,137 @@
 .video-conference-container {
-    position: relative;
-    width: 100%;
-    height: 100vh;
-    background-color: #252827; 
-  }
+  width: 100%;
+  height: 100vh;
+  background-color: #252827;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Контейнер для видео */
+.video-container {
+  width: 100%;
+  max-width: 90vw; /* Ограничение максимальной ширины */
+  max-height: 90vh; /* Ограничение максимальной высоты */
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  box-sizing: border-box;
+  justify-content: center;
+  align-content: center;
+}
+
+/* 1 участник */
+.video-container.grid-1 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  aspect-ratio: 16 / 9; /* 1 участник всегда 16:9 */
+  max-width: 50%;
+}
+
+/* 2 участника – 2 колонки */
+.video-container.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
   
+  
+  max-width: 80%;
+}
+
+/* 3 участника: 2 сверху, 1 снизу (по центру) */
+.video-container.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: 1fr 1fr; /* Две строки одинаковой высоты */
+  max-width: 70%;
+  height: 100%; /* Растягиваем контейнер на всю доступную высоту */
+}
+
+/* Выравнивание всех видео по центру ячейки */
+.video-container.grid-3 .stream-container {
+  align-self: center; /* Центрирует видео внутри ячейки */
+}
+
+/* Центрируем третьего участника */
+.video-container.grid-3 .stream-container:nth-child(3) {
+  grid-column: 1 / -1; /* Растягиваем на всю ширину */
+  justify-self: center;
+  align-self: center; /* Центрируем внутри строки */
+  max-width: 50%; /* Делаем его не больше верхних */
+}
+/* 4 участника (2x2) */
+.video-container.grid-4 {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, auto);
+  aspect-ratio: 16 / 9; /* Гарантия правильного масштаба */
+  max-width: 80%;
+}
+
+/* 5+ участников */
+.video-container.grid-many {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  aspect-ratio: 16 / 9;
+  max-width: 90%;
+}
+
+/* Видео-контейнер */
+.stream-container {
+  width: 100%;
+  aspect-ratio: 16 / 9; /* Гарантируем правильные пропорции */
+  background-color: #000;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Видео внутри контейнера */
+.video-element {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Теперь видео будет заполнять контейнер без черных полос */
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
   .video-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 16px;
-    padding: 16px;
-    width: 100%;
-    height: 100%;
-    overflow-y: auto;
-    padding-bottom: 80px; /* Добавляем отступ для кнопки */
+    height: auto;
+    max-width: 100%;
+    aspect-ratio: unset;
   }
   
-  .video-descendant {
-    width: 300px;
-    height: 225px;
-    object-fit: cover;
-    background-color: #000;
-    border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  .video-container.grid-3 .stream-container:nth-child(3) {
+    max-width: 100%; /* Нижний участник на мобильных – на всю ширину */
   }
-  
-  .access-panel-wrapper {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-    padding: 20px 0;
-    background: linear-gradient(to top, rgba(0,0,0,0.1), transparent);
-    z-index: 100;
-  }
-  
-  /* Адаптивные стили */
-  @media (max-width: 768px) {
-    .video-descendant {
-      width: 100%;
-      height: auto;
-      max-height: 200px;
-    }
-    
-    .video-container {
-      padding-bottom: 60px;
-    }
-
-    
-  }
+}
 
 
-  .access-panel-container {
-    position: fixed;
-    bottom: 20px;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: space-between;
-    z-index: 1000;
-    width: 120px;
-    margin: 0 auto;
-  }
+/* Кнопка выхода */
+.exit-call-button {
+  margin-left: 150px;
+  background-color: #d32f2f;
+  color: white;
+  padding: 12px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+.exit-call-button:hover {
+  background-color: #b71c1c;
+  transform: scale(1.1);
+}
+
+.exit-call-button svg {
+  fill: white;
+}
+
+.exit-call-button:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
 
 
-  .exit-call-button {
-    margin-left: 150px;
-    background-color: #d32f2f; /* Красный цвет */
-    color: white;
-    padding: 12px;
-    border-radius: 50%;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    transition: all 0.3s ease;
-  }
-  
-  .exit-call-button:hover {
-    background-color: #b71c1c; /* Темнее при наведении */
-    transform: scale(1.1);
-  }
-  
-  /* Убеждаемся, что иконка внутри остаётся белой */
-  .exit-call-button svg {
-    fill: white;
-  }
-  
-  /* Состояние при выходе (делаем полупрозрачной и отключаем клики) */
-  .exit-call-button:disabled {
-    opacity: 0.5;
-    pointer-events: none;
-  }

@@ -9,6 +9,7 @@ import AuthService from './services/AuthService';
 import Room from './/pages/Room/room';
 import VideoCall from './pages/VideoConference/VideoConference';
 import EnterRoomPage from './pages/EnterRoomPage/EnterRoomPage';
+import FilesPage from './pages/FilesPage/FilesPage'; // Импортируем компонент для файлов
 import './App.css';
 
 const App = () => {
@@ -56,25 +57,32 @@ const App = () => {
           )
         }
       />
-
-
-
-       <Route
+      <Route
         path="/enter-room"
         element={
           isAuthenticated ? (
-           <EnterRoomPage />
+            <EnterRoomPage />
           ) : (
             <Navigate to="/login" replace />
           )
         }
       />
-
       <Route
         path="/room/:id"
         element={
           isAuthenticated ? (
-            <VideoCall/>
+            <VideoCall />
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+      {/* Добавляем маршрут для файлов */}
+      <Route
+        path="/files"
+        element={
+          isAuthenticated ? (
+            <FilesPage />
           ) : (
             <Navigate to="/login" replace />
           )

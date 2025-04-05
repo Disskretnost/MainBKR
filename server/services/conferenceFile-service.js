@@ -2,6 +2,7 @@ const ConferenceFile = require('../models/ConferenceFile');
 const Conference = require('../models/Conference');
 const ApiError = require('../exceptions/apiError');
 const ConferenceFileDTO = require('./../dtos/conferenceFile-dto'); // Предполагается, что у вас есть DTO
+const listFileDTO = require('./../dtos/listFile-dto'); 
 
 class ConferenceFileService {
   // Добавление файла к конференции
@@ -60,16 +61,30 @@ class ConferenceFileService {
     }
   }
 
-  async getAllFiles() {
+  async getAllFiles(userId) {
     try {
-      const files = await ConferenceFile.findAll(); // Убрана сортировка
+      // 1. Сначала находим ID конференций, где пользователь является владельцем
+      const userConferences = await Conference.findAll({
+        attributes: ['id'],
+        where: { ownerId: userId }
+      });
+      const conferenceIds = userConferences.map(c => c.id);
+      const files = await ConferenceFile.findAll({
+        where: {
+          conferenceId: conferenceIds
+        }
+      });
+      console.log(files);
       
-      return files.map(file => new ConferenceFileDTO(file));
+      return files.map(file => new listFileDTO(file));
+  
+      
+    
     } catch (error) {
       console.error('Ошибка при получении файлов:', error);
       throw error;
     }
-  }
+  } 
 
 
   async getFileForDownload(fileId) {

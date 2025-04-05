@@ -1,13 +1,11 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import VideoConferenceManager from '../../socket/VideoConferenceManager';
 import AccessCodePanel from '../../components/AccessCodePanel/AccessCodePanel';
 import './VideoConference.css';
-import { Button, IconButton } from '@mui/material';
+import { IconButton } from '@mui/material';
 import CallEndIcon from '@mui/icons-material/CallEnd';
-import VpnKeyIcon from '@mui/icons-material/VpnKey';
 
 const VideoCall = () => {
   const roomName = useSelector((state) => state.conference.id);
@@ -17,36 +15,71 @@ const VideoCall = () => {
   const videoContainerRef = useRef(null);
   const navigate = useNavigate();
   const [isExiting, setIsExiting] = useState(false);
+  const streamsCountRef = useRef(0);
+
+  const updateGridClass = () => {
+    const count = streamsCountRef.current;
+    let gridClass = 'grid-';
+    
+    if (count <= 4) {
+      gridClass += count;
+    } else {
+      gridClass += 'many';
+    }
+    
+    videoContainerRef.current.className = `video-container ${gridClass}`;
+  };
 
   const callbacks = {
     onLocalStream: (stream, socketId) => {
+      const container = document.createElement('div');
+      container.className = 'stream-container';
+      
       const video = document.createElement('video');
       video.srcObject = stream;
       video.autoplay = true;
       video.muted = true;
-      video.className = 'video-descendant';
+      video.className = 'video-element';
       video.id = `video-${socketId}`;
-      videoContainerRef.current.appendChild(video);
+      
+      container.appendChild(video);
+      videoContainerRef.current.appendChild(container);
+      streamsCountRef.current += 1;
+      updateGridClass();
     },
     onRemoteStream: (stream, producerId, kind) => {
-      const container = document.createElement('div');
-      container.id = `td-${producerId}`;
-      
-      const mediaElement = document.createElement(kind === 'audio' ? 'audio' : 'video');
-      mediaElement.id = `${kind}-${producerId}`;
-      mediaElement.autoplay = true;
+      // Для видео создаем контейнер и видео элемент
       if (kind === 'video') {
-        mediaElement.className = 'video-descendant';
+        const container = document.createElement('div');
+        container.className = 'stream-container';
+        
+        const video = document.createElement('video');
+        video.id = `video-${producerId}`;
+        video.autoplay = true;
+        video.className = 'video-element';
+        video.srcObject = stream;
+        
+        container.appendChild(video);
+        videoContainerRef.current.appendChild(container);
+        streamsCountRef.current += 1;
+        updateGridClass();
       }
-      mediaElement.srcObject = stream;
-      
-      container.appendChild(mediaElement);
-      videoContainerRef.current.appendChild(container);
+      // Для аудио просто создаем невидимый audio элемент
+      else if (kind === 'audio') {
+        const audio = document.createElement('audio');
+        audio.id = `audio-${producerId}`;
+        audio.autoplay = true;
+        audio.srcObject = stream;
+        audio.hidden = true;
+        document.body.appendChild(audio); // Добавляем в body, но не в контейнер
+      }
     },
     onRemoteStreamEnded: (producerId) => {
-      const element = document.getElementById(`td-${producerId}`);
-      if (element && videoContainerRef.current.contains(element)) {
-        videoContainerRef.current.removeChild(element);
+      const element = document.getElementById(`video-${producerId}`);
+      if (element && element.parentNode && videoContainerRef.current.contains(element.parentNode)) {
+        videoContainerRef.current.removeChild(element.parentNode);
+        streamsCountRef.current = Math.max(0, streamsCountRef.current - 1);
+        updateGridClass();
       }
     },
     onSocketId: (socketId) => {
@@ -63,6 +96,10 @@ const VideoCall = () => {
     },
     onCleanup: () => {
       console.log('Все ресурсы очищены');
+      streamsCountRef.current = 0;
+      if (videoContainerRef.current) {
+        videoContainerRef.current.className = 'video-container';
+      }
     },
     onSpeechRecognized: (text) => {
       console.log('Распознано:', text);
@@ -74,7 +111,7 @@ const VideoCall = () => {
     if (conferenceManagerRef.current) {
       conferenceManagerRef.current.cleanup();
     }
-    navigate('/'); // Переход на главную страницу
+    navigate('/');
   };
 
   useEffect(() => {
@@ -100,15 +137,15 @@ const VideoCall = () => {
       <div className="video-container" ref={videoContainerRef} />
       <div className="access-panel-wrapper">
         <div className="access-panel-container">
-            <AccessCodePanel accessCode={accessCode} />
-            <IconButton
-              onClick={handleExit}
-              disabled={isExiting}
-              className="exit-call-button"
-              aria-label="Выйти из чата"
-            >
-              <CallEndIcon fontSize="large" />
-            </IconButton>
+          <AccessCodePanel accessCode={accessCode} />
+          <IconButton
+            onClick={handleExit}
+            disabled={isExiting}
+            className="exit-call-button"
+            aria-label="Выйти из чата"
+          >
+            <CallEndIcon fontSize="large" />
+          </IconButton>
         </div>
       </div>
     </div>

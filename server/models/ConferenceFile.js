@@ -26,7 +26,6 @@ const ConferenceFile = sequelize.define('conference_file', {
     allowNull: false
   }
 }, {
-  timestamps: false,
   indexes: [
     { fields: ['conferenceId'] }
   ]

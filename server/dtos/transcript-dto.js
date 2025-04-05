@@ -6,6 +6,7 @@ class TranscriptDTO {
         this.conferenceId = transcript.conferenceId;
         this.message = transcript.message;
         this.timestamp = transcript.timestamp;
+        this.username = transcript.user.username;
     }
 }
 

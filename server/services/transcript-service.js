@@ -26,9 +26,18 @@ class TranscriptService {
       try {
         const transcripts = await Transcript.findAll({
           where: { conferenceId: conferenceId },
-          order: [['timestamp', 'ASC']], // Sort by timestamp in ascending order
-          // No include here
+          order: [['timestamp', 'ASC']], // Сортировка по времени
+          include: [
+            {
+              model: User,
+              attributes: ['username'], // Получаем только username
+              required: false // LEFT JOIN (если у записи нет user, она всё равно попадёт в результат)
+            }
+          ],
+          raw: true,
+          nest: true // ← для корректного отображения вложенных моделей
         });
+        console.log(transcripts);
   
         return transcripts.map(transcript => new TranscriptDTO(transcript)); // Map to DTOs
   
