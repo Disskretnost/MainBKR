@@ -9,12 +9,12 @@ class TranscriptService {
     // Create a new transcript
     async createTranscript(userId, conferenceId, message) {
       try {
-        const transcript = await Transcript.create({
-          userId: userId,
-          conferenceId: conferenceId,
-          message: message,
-        });
-        return new TranscriptDTO(transcript); // Return DTO
+        await Transcript.create({
+          userId,
+          conferenceId,
+          message,
+          timestamp: new Date() // Рекомендую сохранять время создания
+      });
       } catch (error) {
         console.error(error);
         throw error;

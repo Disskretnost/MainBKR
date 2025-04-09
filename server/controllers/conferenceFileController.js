@@ -29,6 +29,30 @@ class ConferenceFileController {
       next(e);
     }
   }
+
+
+
+  async markFileAsDeleted(req, res, next) {
+    try {
+        const { fileId, userId } = req.params;
+        
+        
+        // Вызываем сервис для установки статуса 'deleted'
+        await conferenceFileService.setFileStatusDeleted(
+            fileId, 
+            userId, 
+            'deleted'
+        );
+
+        // Отправляем успешный статус 201 (Created)
+        return res.sendStatus(201);
+        
+    } catch (e) {
+        // В случае ошибки передаем ее в обработчик ошибок
+        next(e);
+    }
+}
+
 }
 
 module.exports = new ConferenceFileController();

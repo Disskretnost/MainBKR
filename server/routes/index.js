@@ -22,6 +22,9 @@ router2.post('/createRoom', roomController.createConference);
 router2.post('/enterRoom', roomController.getConferenceByAccessCode);
 router2.get('/getconferenceFile/:id', ConferenceFileController.getAllFiles);
 router2.get('/getAllParticipants', ParticipantController.getAllParticipants);
-router2.get('/download/:id', ConferenceFileController.downloadFile); // Новый маршрут
+router2.get('/download/:id', ConferenceFileController.downloadFile); 
+router2.patch('/files/:fileId/users/:userId/status', 
+    ConferenceFileController.markFileAsDeleted
+  );
 
 module.exports = router2;  

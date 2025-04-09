@@ -440,6 +440,7 @@ const initializeSocketHandlers = (io) => {
             filename,
             outputPath
           );
+          await ConferenceFileService.setFileStatusForAll(userData.roomName, 'visible');
           await transcriptService.deleteTranscriptsForConference(userData.roomName);
 
           out.on('close', async () => {

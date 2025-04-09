@@ -3,13 +3,9 @@ const sequelize = require('../db');
 const Conference = require('./Conference');
 
 const ConferenceFile = sequelize.define('conference_file', {
-  id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
-  },
   conferenceId: {
     type: DataTypes.INTEGER,
+    primaryKey: true,
     allowNull: false,
     references: {
       model: Conference,

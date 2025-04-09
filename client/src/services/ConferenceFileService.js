@@ -32,6 +32,20 @@ class ConferenceFileService {
       console.error('Ошибка при скачивании файла:', error.response?.data?.message || 'Произошла ошибка при скачивании файла. Попробуйте снова.');
     }
   }
+
+    static async markFileDeleted(fileId, userId) {
+      try {
+          const response = await $api.patch(`/files/${fileId}/users/${userId}/status`);
+          
+          if (response.status === 201 ) {
+              return true;
+          }
+          throw new Error(response.data?.message || 'Не удалось изменить статус файла');
+      } catch (error) {
+          console.error('Ошибка:', error.message);
+          throw error;
+      }
+  }
 }
 
 // Экспортируем сервис как default
