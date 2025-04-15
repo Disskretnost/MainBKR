@@ -32,7 +32,7 @@ export default class VideoConferenceManager {
   }
 
   async initialize() {
-    const WEBSOCKET_URL = process.env.REACT_APP_WEBSOCKET_URL || 'ws://localhost/mediasoup';
+    const WEBSOCKET_URL = process.env.REACT_APP_WEBSOCKET_URL || 'wss://kucherenkoaleksanr.ru/mediasoup';
     this.socket = io(WEBSOCKET_URL);
 
 
@@ -50,7 +50,7 @@ export default class VideoConferenceManager {
   }
 
   initSpeechRecognition() {
-/*     if (!('webkitSpeechRecognition' in window)) {
+    if (!('webkitSpeechRecognition' in window)) {
       console.warn('Браузер не поддерживает распознавание голоса');
       return;
     }
@@ -95,8 +95,8 @@ export default class VideoConferenceManager {
     };
   
     this.recognition.start();
- */
-    const messages = [
+
+   /*  const messages = [
       'Привет',
       'Как дела?',
       'Что нового?',
@@ -116,7 +116,7 @@ export default class VideoConferenceManager {
         isSpeech: true
       });
       
-    }, 5000); // Отправка каждые 5 секунд
+    }, 5000); // Отправка каждые 5 секунд */
   
   }
 
