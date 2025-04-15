@@ -153,3 +153,30 @@
   fill: white;
 }
 
+.toggle-screen-button {
+  margin-left: 16px;
+  background-color: #1976d2; /* синий цвет как "включено" */
+  color: white;
+  padding: 12px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+.toggle-screen-button:hover {
+  background-color: #1565c0;
+  transform: scale(1.1);
+}
+
+.toggle-screen-button svg {
+  fill: white;
+}
+
+/* Состояние выключенной демонстрации (если нужно менять цвет, можно добавить класс .off) */
+.toggle-screen-button.off {
+  background-color: #757575; /* серый, как "выключено" */
+}
+
+.toggle-screen-button.off:hover {
+  background-color: #616161;
+}

@@ -8,6 +8,8 @@ import { IconButton } from '@mui/material';
 import CallEndIcon from '@mui/icons-material/CallEnd';
 import MicIcon from '@mui/icons-material/Mic';
 import MicOffIcon from '@mui/icons-material/MicOff';
+import ScreenShareIcon from '@mui/icons-material/ScreenShare';
+import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 
 const VideoCall = () => {
   const roomName = useSelector((state) => state.conference.id);
@@ -19,6 +21,7 @@ const VideoCall = () => {
   const [isExiting, setIsExiting] = useState(false);
   const streamsCountRef = useRef(0);
   const [micEnabled, setMicEnabled] = useState(true);
+  const [screenSharing, setScreenSharing] = useState(false);
 
   const updateGridClass = () => {
     const count = streamsCountRef.current;
@@ -55,9 +58,31 @@ const VideoCall = () => {
       console.error('🎤 Audio track not found');
     }
   };
+
+  const handleToggleScreenSharing = async () => {
+    const manager = conferenceManagerRef.current;
+    if (!manager) return;
   
+    if (screenSharing) {
+      await manager.switchToCamera();
+      setScreenSharing(false);
+    } else {
+      await manager.switchToScreen();
+      setScreenSharing(true);
+    }
+  };
+
   const callbacks = {
     onLocalStream: (stream, socketId) => {
+      const existingVideo = document.getElementById(`video-${socketId}`);
+      
+      if (existingVideo) {
+        // Если видео уже есть — просто заменим источник
+        existingVideo.srcObject = stream;
+        return;
+      }
+    
+      // Если видео нет — создаём заново
       const container = document.createElement('div');
       container.className = 'stream-container';
       
@@ -73,6 +98,7 @@ const VideoCall = () => {
       streamsCountRef.current += 1;
       updateGridClass();
     },
+    
     onRemoteStream: (stream, producerId, kind) => {
       // Для видео создаем контейнер и видео элемент
       if (kind === 'video') {
@@ -179,6 +205,14 @@ const VideoCall = () => {
             aria-label="Вкл/выкл микрофон"
           >
             {micEnabled ? <MicIcon fontSize="large" /> : <MicOffIcon fontSize="large" />}
+          </IconButton>
+
+          <IconButton
+            onClick={handleToggleScreenSharing}
+            className="toggle-screen-button"
+            aria-label="Вкл/выкл демонстрацию экрана"
+          >
+            {screenSharing ? <StopScreenShareIcon fontSize="large" /> : <ScreenShareIcon fontSize="large" />}
           </IconButton>
         </div>
       </div>

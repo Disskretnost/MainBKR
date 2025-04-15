@@ -133,6 +133,45 @@ export default class VideoConferenceManager {
     }
   }
 
+
+  async switchToScreen() {
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const screenTrack = screenStream.getVideoTracks()[0];
+
+      await this.videoProducer.replaceTrack({ track: screenTrack });
+
+      // Обновим локальное превью
+      this.callbacks.onLocalStream(new MediaStream([screenTrack]), this.socketId);
+
+      // Вернуться обратно, если пользователь закроет демонстрацию
+      screenTrack.onended = () => {
+        this.switchToCamera();
+      };
+
+    } catch (error) {
+      console.error('Ошибка при включении демонстрации экрана:', error);
+      this.callbacks.onError('Не удалось начать демонстрацию экрана');
+    }
+  }
+
+  async switchToCamera() {
+    try {
+      const camStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { min: 640, max: 1920 }, height: { min: 400, max: 1080 } }
+      });
+      const camTrack = camStream.getVideoTracks()[0];
+
+      await this.videoProducer.replaceTrack({ track: camTrack });
+
+      // Обновим локальное превью
+      this.callbacks.onLocalStream(new MediaStream([camTrack]), this.socketId);
+    } catch (error) {
+      console.error('Ошибка при возвращении на камеру:', error);
+      this.callbacks.onError('Не удалось вернуться на камеру');
+    }
+  }
+
   streamSuccess(stream) {
     const audioParams = { track: stream.getAudioTracks()[0] };
     const videoParams = { track: stream.getVideoTracks()[0], params: this.params };
