@@ -6,6 +6,8 @@ import AccessCodePanel from '../../components/AccessCodePanel/AccessCodePanel';
 import './VideoConference.css';
 import { IconButton } from '@mui/material';
 import CallEndIcon from '@mui/icons-material/CallEnd';
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
 
 const VideoCall = () => {
   const roomName = useSelector((state) => state.conference.id);
@@ -16,6 +18,7 @@ const VideoCall = () => {
   const navigate = useNavigate();
   const [isExiting, setIsExiting] = useState(false);
   const streamsCountRef = useRef(0);
+  const [micEnabled, setMicEnabled] = useState(true);
 
   const updateGridClass = () => {
     const count = streamsCountRef.current;
@@ -30,6 +33,29 @@ const VideoCall = () => {
     videoContainerRef.current.className = `video-container ${gridClass}`;
   };
 
+  const handleToggleMic = () => {
+    const manager = conferenceManagerRef.current;
+  
+    if (manager?.audioProducer?.track) {
+      const audioTrack = manager.audioProducer.track;
+      const willBeEnabled = !audioTrack.enabled;
+  
+      audioTrack.enabled = willBeEnabled;
+      setMicEnabled(willBeEnabled);
+  
+      console.log('🎤 Microphone:', willBeEnabled ? 'включён' : 'выключен');
+  
+      // Управляем речевым распознаванием
+      if (willBeEnabled) {
+        manager.startSpeechRecognition?.();
+      } else {
+        manager.stopSpeechRecognition?.();
+      }
+    } else {
+      console.error('🎤 Audio track not found');
+    }
+  };
+  
   const callbacks = {
     onLocalStream: (stream, socketId) => {
       const container = document.createElement('div');
@@ -145,6 +171,14 @@ const VideoCall = () => {
             aria-label="Выйти из чата"
           >
             <CallEndIcon fontSize="large" />
+          </IconButton>
+
+          <IconButton
+            onClick={handleToggleMic}
+            className="toggle-mic-button"
+            aria-label="Вкл/выкл микрофон"
+          >
+            {micEnabled ? <MicIcon fontSize="large" /> : <MicOffIcon fontSize="large" />}
           </IconButton>
         </div>
       </div>

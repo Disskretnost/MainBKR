@@ -134,4 +134,22 @@
   pointer-events: none;
 }
 
+.toggle-mic-button {
+  margin-left: 16px;
+  background-color: #4caf50; /* зелёный, как "включено" */
+  color: white;
+  padding: 12px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+.toggle-mic-button:hover {
+  background-color: #388e3c;
+  transform: scale(1.1);
+}
+
+.toggle-mic-button svg {
+  fill: white;
+}
 
