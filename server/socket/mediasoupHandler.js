@@ -245,6 +245,7 @@ const initializeSocketHandlers = (io) => {
     socket.emit('connection-success', { socketId: socket.id });
 
     socket.on('joinRoom', async ({ roomName, id }, callback) => {
+      socket.join(roomName);
       const router = await createRoom(roomName, socket.id);
       const participant = await participantService.addParticipant(roomName, id);
       socketToUserMap.set(socket.id, { id, roomName });
@@ -463,6 +464,25 @@ const initializeSocketHandlers = (io) => {
           console.error('Ошибка обработки сообщения (до записи в Word):', error);
       }
   });
+
+  socket.on('sendMessage', ({ username, text }) => {
+    const userData = socketToUserMap.get(socket.id);
+    if (!userData) return;
+  
+    const { roomName } = userData;
+  
+    console.log('Список комнат:', connections.adapter.rooms); // <--- вот так!
+    console.log('Клиенты в комнате:', connections.adapter.rooms.get(roomName));
+    console.log(`Отправляю в комнату: ${roomName}`);
+  
+    connections.to(roomName).emit('message', {
+      username,
+      text,
+      timestamp: Date.now()
+    });
+  });
+  
+  
     
     
   });

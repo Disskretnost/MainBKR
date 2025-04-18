@@ -32,7 +32,7 @@ export default class VideoConferenceManager {
   }
 
   async initialize() {
-    const WEBSOCKET_URL = process.env.REACT_APP_WEBSOCKET_URL || 'wss://kucherenkoaleksanr.ru/mediasoup';
+    const WEBSOCKET_URL = process.env.REACT_APP_WEBSOCKET_URL || 'ws://localhost/mediasoup';
     this.socket = io(WEBSOCKET_URL);
 
 

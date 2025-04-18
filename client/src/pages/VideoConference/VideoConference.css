@@ -1,5 +1,4 @@
 .video-conference-container {
-  width: 100%;
   height: 100vh;
   background-color: #252827;
   display: flex;
@@ -7,17 +6,15 @@
   align-items: center;
 }
 
-/* Контейнер для видео */
 .video-container {
   width: 100%;
-  max-width: 90vw; /* Ограничение максимальной ширины */
   max-height: 90vh; /* Ограничение максимальной высоты */
   display: grid;
   gap: 8px;
   padding: 8px;
-  box-sizing: border-box;
   justify-content: center;
   align-content: center;
+  margin: 0 auto;
 }
 
 /* 1 участник */
@@ -29,26 +26,26 @@
   max-width: 50%;
 }
 
-/* 2 участника – 2 колонки */
+
 .video-container.grid-2 {
   grid-template-columns: repeat(2, 1fr);
   
   
-  max-width: 80%;
+  max-width: 90%;
 }
 
 /* 3 участника: 2 сверху, 1 снизу (по центру) */
 .video-container.grid-3 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: 1fr 1fr; /* Две строки одинаковой высоты */
+  grid-template-rows: 1fr 1fr; 
   max-width: 70%;
-  height: 100%; /* Растягиваем контейнер на всю доступную высоту */
+  height: 100%; 
 }
 
 /* Выравнивание всех видео по центру ячейки */
 .video-container.grid-3 .stream-container {
-  align-self: center; /* Центрирует видео внутри ячейки */
+  align-self: center; 
 }
 
 /* Центрируем третьего участника */
@@ -95,18 +92,7 @@
   object-fit: cover; /* Теперь видео будет заполнять контейнер без черных полос */
 }
 
-/* Адаптивность */
-@media (max-width: 768px) {
-  .video-container {
-    height: auto;
-    max-width: 100%;
-    aspect-ratio: unset;
-  }
-  
-  .video-container.grid-3 .stream-container:nth-child(3) {
-    max-width: 100%; /* Нижний участник на мобильных – на всю ширину */
-  }
-}
+
 
 
 /* Кнопка выхода */
@@ -180,3 +166,51 @@
 .toggle-screen-button.off:hover {
   background-color: #616161;
 }
+
+.main-content {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  
+}
+
+.video-wrapper {
+  flex: 1;
+  display: flex;
+  transition: all 0.3s ease;
+}
+
+.toggle-chat-button {
+  margin-left: 16px;
+  background-color: #1976d2; /* синий цвет, как у демонстрации экрана */
+  color: white;
+  padding: 12px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+  pointer-events: auto; /* по умолчанию кликабельная */
+}
+
+.toggle-chat-button:hover {
+  background-color: #1565c0;
+  transform: scale(1.1);
+}
+
+.toggle-chat-button svg {
+  fill: white;
+}
+
+/* Скрытие кнопки, если чат открыт (по opacity и отключению кликов) */
+.toggle-chat-button.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.access-panel-container{
+  z-index: 0;
+
+}
+
+
+
+
