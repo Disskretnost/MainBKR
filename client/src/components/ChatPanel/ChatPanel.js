@@ -1,18 +1,14 @@
 // ChatPanel.js
 import React, { useState, useEffect, useRef } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { addMessage } from './../../slices/chatSlice';
+import {  useSelector } from 'react-redux';
 import CloseIcon from '@mui/icons-material/Close';
 import './ChatPanel.css';
 
 const ChatPanel = ({ onClose, conferenceManager }) => {
   const [inputValue, setInputValue] = useState('');
-
   const messages = useSelector(state => state.chat.messages);
   const { username } = useSelector(state => state.auth.user);
   const messagesEndRef = useRef(null);
-
-
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

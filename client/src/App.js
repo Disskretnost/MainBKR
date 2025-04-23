@@ -6,7 +6,7 @@ import LoginPage from './pages/LoginPage/LoginPage';
 import HomePage from './pages/HomePage/HomePage';
 import RegisterPage from './pages/RegisterPage/RegisterPage';
 import AuthService from './services/AuthService';
-import Room from './/pages/Room/room';
+
 import VideoCall from './pages/VideoConference/VideoConference';
 import EnterRoomPage from './pages/EnterRoomPage/EnterRoomPage';
 import FilesPage from './pages/FilesPage/FilesPage'; // Импортируем компонент для файлов

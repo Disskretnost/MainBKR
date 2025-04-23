@@ -9,6 +9,7 @@ const officegen = require('officegen');
 const transcriptService = require('./../services/transcript-service');
 const ConferenceFileService = require('../services/conferenceFile-service');
 
+
 // Mediasoup worker and room management
 let worker;
 let rooms = {};
@@ -456,14 +457,28 @@ const initializeSocketHandlers = (io) => {
       }
     });
 
+
     socket.on('newMessage', async (messageData) => {
       try {
-          const { roomId, userId, text } = messageData;
-          const transcript = await transcriptService.createTranscript(userId, roomId, text);
+        const { roomId, userId, text, lang3 } = messageData;
+        
+        
+        console.log(messageData);
+        const userData = socketToUserMap.get(socket.id);
+        if (!userData) return;
+      
+        const { roomName } = userData;
+        connections.to(roomName).emit('subtitles', {
+          userId,
+          text,
+          lang3
+        });
+        
+        const transcript = await transcriptService.createTranscript(userId, roomId, text);
       } catch (error) {
-          console.error('Ошибка обработки сообщения (до записи в Word):', error);
+        console.error('Ошибка обработки сообщения:', error);
       }
-  });
+    });
 
   socket.on('sendMessage', ({ username, text }) => {
     const userData = socketToUserMap.get(socket.id);

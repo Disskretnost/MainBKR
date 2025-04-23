@@ -1,5 +1,6 @@
 import io from 'socket.io-client';
 import { Device } from 'mediasoup-client';
+import SpeechRecognitionManager from './../utils/SpeechRecognitionManager';
 
 export default class VideoConferenceManager {
   constructor(roomName, accessCode, id, callbacks) {
@@ -7,8 +8,7 @@ export default class VideoConferenceManager {
     this.accessCode = accessCode;
     this.callbacks = callbacks;
     this.id = id;
-    this.recognition = null;
-    this.initSpeechRecognition();
+    this.speechManager = null;
     this.device = null;
     this.rtpCapabilities = null;
     this.producerTransport = null;
@@ -32,14 +32,20 @@ export default class VideoConferenceManager {
   }
 
   async initialize() {
-    const WEBSOCKET_URL = process.env.REACT_APP_WEBSOCKET_URL || 'wss://kucherenkoaleksanr.ru/mediasoup';
+    const WEBSOCKET_URL = process.env.REACT_APP_WEBSOCKET_URL || 'ws://localhost/mediasoup';
     this.socket = io(WEBSOCKET_URL);
 
 
     this.socket.on('connection-success', ({ socketId }) => {
       this.socketId = socketId;
-      this.callbacks.onSocketId(socketId);
       this.getLocalStream();
+
+      this.speechManager = new SpeechRecognitionManager({
+        socket: this.socket,
+        userId: this.id,
+        roomId: this.roomName,
+      });
+      this.speechManager.start();
     });
 
     this.socket.on('new-producer', ({ producerId,id }) => this.signalNewConsumerTransport(producerId, id));
@@ -49,76 +55,7 @@ export default class VideoConferenceManager {
     });
   }
 
-  initSpeechRecognition() {
-    if (!('webkitSpeechRecognition' in window)) {
-      console.warn('Браузер не поддерживает распознавание голоса');
-      return;
-    }
   
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    this.recognition = new SpeechRecognition();
-    this.recognition.continuous = true;
-    this.recognition.interimResults = false;
-    this.recognition.lang = 'ru-RU';
-  
-    this.recognition.onresult = (event) => {
-      let finalTranscript = '';
-  
-      for (let i = event.resultIndex; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript;
-        }
-      }
-  
-      if (finalTranscript && this.socket) {
-        // Отправка через существующий сокет-канал
-        this.socket.emit('newMessage', {
-          userId: this.id,
-          roomId: this.roomName,
-          text: finalTranscript,
-          isSpeech: true 
-        });
-      }
-    };
-  
-    this.recognition.onerror = (event) => {
-      console.error('Ошибка распознавания:', event.error);
-    };
-  
-    this.recognition.onstart = () => {
-      console.log("Распознавание речи запущено");
-    };
-  
-    this.recognition.onend = () => {
-      console.log("Распознавание завершено, перезапуск...");
-      this.recognition.start();
-    };
-  
-    this.recognition.start();
-
-   /*  const messages = [
-      'Привет',
-      'Как дела?',
-      'Что нового?',
-      'Давайте начнём',
-      'Я готов'
-    ];
-  
-    setInterval(() => {
-      if (!this.socket) return;
-      
-      const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-      
-      this.socket.emit('newMessage', {
-        userId: this.id,
-        roomId: this.roomName,
-        text: randomMessage,
-        isSpeech: true
-      });
-      
-    }, 5000); // Отправка каждые 5 секунд */
-  
-  }
 
   async getLocalStream() {
     try {
@@ -248,11 +185,6 @@ export default class VideoConferenceManager {
       this.audioProducer = await this.producerTransport.produce(audioParams);
       this.videoProducer = await this.producerTransport.produce(videoParams);
 
-      this.audioProducer.on('trackended', () => this.callbacks.onTrackEnded('audio'));
-      this.audioProducer.on('transportclose', () => this.callbacks.onTransportClose('audio'));
-      this.videoProducer.on('trackended', () => this.callbacks.onTrackEnded('video'));
-      this.videoProducer.on('transportclose', () => this.callbacks.onTransportClose('video'));
-
     } catch (error) {
       console.error('Error connecting send transport:', error);
       this.callbacks.onError('Ошибка подключения медиапотоков');
@@ -291,7 +223,7 @@ export default class VideoConferenceManager {
         }
       });
 
-      this.connectRecvTransport(consumerTransport, remoteProducerId, params.id);
+      this.connectRecvTransport(consumerTransport, remoteProducerId, params.id, clientId);
     });
   }
 
@@ -304,7 +236,7 @@ export default class VideoConferenceManager {
     });
   }
 
-  async connectRecvTransport(consumerTransport, remoteProducerId, serverConsumerTransportId) {
+  async connectRecvTransport(consumerTransport, remoteProducerId, serverConsumerTransportId, clientId) {
     await this.socket.emit(
       'consume',
       {
@@ -337,7 +269,8 @@ export default class VideoConferenceManager {
           this.callbacks.onRemoteStream(
             new MediaStream([track]), 
             remoteProducerId, 
-            params.kind
+            params.kind,
+            clientId
           );
 
           this.socket.emit('consumer-resume', { serverConsumerId: params.serverConsumerId });
@@ -366,6 +299,9 @@ export default class VideoConferenceManager {
   }
 
   cleanup() {
+
+    this.speechManager?.stop();
+
     if (this.socket) {
       this.socket.disconnect();
     }
