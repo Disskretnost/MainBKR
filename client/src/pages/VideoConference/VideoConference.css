@@ -76,14 +76,34 @@
 
 /* Видео-контейнер */
 .stream-container {
+  position: relative; /* нужно для абсолютного позиционирования субтитров */
   width: 100%;
-  aspect-ratio: 16 / 9; /* Гарантируем правильные пропорции */
+  aspect-ratio: 16 / 9;
   background-color: #000;
   border-radius: 8px;
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
+}
+
+/* Субтитры поверх видео */
+.subtitle-container {
+  position: absolute;
+  bottom: 5%; /* немного выше нижнего края */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 16px;
+  max-width: 90%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
 }
 
 /* Видео внутри контейнера */

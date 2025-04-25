@@ -5,6 +5,7 @@ const Participant = require('./Participant')
 const Transcript = require('./Transcript')
 const ConferenceFile = require("./ConferenceFile")
 const FileStatus = require('./FileStatus')
+const Language = require('./Language.js')
 
 // Экспортируем все модели для использования в других частях приложения
 module.exports = {
@@ -14,5 +15,6 @@ module.exports = {
   Participant,
   Transcript,
   ConferenceFile,
-  FileStatus 
+  FileStatus,
+  Language
 };

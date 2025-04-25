@@ -18,6 +18,7 @@ import handleToggleMicFn from '../../utils/conference/handleToggleMic';
 import handleToggleScreenSharingFn from '../../utils/conference/handleToggleScreenSharing';
 import handleToggleChatFn from '../../utils/conference/handleToggleChat';
 
+
 const VideoCall = () => {
   const roomName = useSelector(state => state.conference.id);
   const accessCode = useSelector(state => state.conference.accessCode);
@@ -32,6 +33,7 @@ const VideoCall = () => {
   const [screenSharing, setScreenSharing] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [subtitles, setSubtitles] = useState({});
+  
 
   const updateGridClass = () => {
     const gridClass = getGridClass(streamsCountRef.current);
@@ -89,7 +91,7 @@ const VideoCall = () => {
         video.className = 'video-element';
         video.srcObject = stream;
         container.appendChild(video);
-
+        console.log("Создание субтитров для", clientId)
         const subtitleContainer = document.createElement('div');
         subtitleContainer.className = 'subtitle-container';
         subtitleContainer.id = `subtitle-${clientId}`;
@@ -145,11 +147,28 @@ const VideoCall = () => {
   
     const socket = conferenceManagerRef.current.socket;
   
-    const handleSubtitles = ({ userId, text, lang3 }) => {
-      setSubtitles(prevSubtitles => ({
-        ...prevSubtitles,
-        [userId]: text,
-      }));
+    const handleSubtitles = async ({ userId, text, lang3 }) => {
+      try {
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=${lang3}&tl=en&q=${encodeURIComponent(text)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+  
+        const translated = data[0]?.[0]?.[0] ?? text;
+  
+        console.log('📝 Перевод:', translated);
+  
+        setSubtitles(prevSubtitles => ({
+          ...prevSubtitles,
+          [userId]: translated,
+        }));
+      } catch (err) {
+        console.error('❌ Ошибка при переводе:', err);
+  
+        setSubtitles(prevSubtitles => ({
+          ...prevSubtitles,
+          [userId]: text,
+        }));
+      }
     };
   
     socket.on('subtitles', handleSubtitles);
@@ -158,6 +177,18 @@ const VideoCall = () => {
       socket.off('subtitles', handleSubtitles);
     };
   }, []);
+  
+  
+
+  // 🔄 Синхронизация субтитров с DOM
+  useEffect(() => {
+    Object.entries(subtitles).forEach(([clientId, text]) => {
+      const subtitleEl = document.getElementById(`subtitle-${clientId}`);
+      if (subtitleEl) {
+        subtitleEl.innerText = text;
+      }
+    });
+  }, [subtitles]);
 
   useEffect(() => {
     if (!conferenceManagerRef.current) return;

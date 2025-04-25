@@ -14,7 +14,7 @@ export default class SpeechRecognitionManager {
       console.log('Метод stop был вызван (заглушка)');
     };
     this.start = () => {
-      console.log('Метод start был вызван (заглушка)');
+      console.log('Метод s был вызван (заглушка)');
     };
 
     this._startMessageSending();
@@ -30,7 +30,7 @@ export default class SpeechRecognitionManager {
 
   // Метод для отправки сообщения
   _sendMessage() {
-    const lang3 = 'eng'; // Установим язык как английский (можно заменить на любой другой, если нужно)
+    const lang3 = 'ru'; // Установим язык как английский (можно заменить на любой другой, если нужно)
 
     // Отправка сообщения через сокет
     if (this.socket) {

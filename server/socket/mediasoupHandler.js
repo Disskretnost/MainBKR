@@ -473,6 +473,7 @@ const initializeSocketHandlers = (io) => {
           text,
           lang3
         });
+        console.log(`Отправляю в комнату: ${roomName}`);
         
         const transcript = await transcriptService.createTranscript(userId, roomId, text);
       } catch (error) {
