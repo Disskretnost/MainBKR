@@ -5,11 +5,11 @@ const sequelize = require('./db');
 const {version, validate} = require('uuid');
 const models = require('./models');  
 const cors = require('cors');
-const http = require('http');  // Для создания HTTP сервера
+const http = require('http'); 
 const router2 = require('./routes/index');
-const { v4: uuidv4 } = require('uuid'); // Импортируем функцию
+const { v4: uuidv4 } = require('uuid'); 
 const app = express();
-require('dotenv').config({ path: '../.env' });  // Указываем путь к файлу .env на один уровень выше
+require('dotenv').config({ path: '../.env' });  
 const { Server } = require('socket.io');
 const mediasoup = require('mediasoup');
 const path = require('path');
@@ -18,37 +18,32 @@ const { initializeSocketHandlers } = require('./socket/mediasoupHandler');
 
 app.use(cors({
   origin: ['http://localhost:3000', 'https://kucherenkoaleksanr.ru'], 
-  credentials: true  // Разрешите отправку кук (если это действительно нужно)
+  credentials: true  
 }));
-app.use(express.json());  // Для парсинга JSON в запросах
+app.use(express.json());  
 
 
-// Настроим маршруты
 
-app.use('/api', router2);  // API маршруты
-app.use(errorMiddlewares);  // Промежуточное ПО для обработки ошибок
+app.use('/api', router2);  
+app.use(errorMiddlewares);  
 app.use('/sfu/:room', express.static(path.join(__dirname, 'public')))
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: '*',  // Разрешить все источники
-    methods: '*',  // Разрешить все методы
+    origin: '*',  
+    methods: '*', 
     credentials: true,  
   },
 });
 
 initializeSocketHandlers(io);
-//messageHandler(io);
 
-// Запуск сервера
 const start = async () => {
   try {
-    await sequelize.authenticate();  // Подключаемся к базе данных
-    await sequelize.sync({ alter: true });  // Синхронизируем модели с базой данных
-
-    // Запускаем сервер на том же порту
+    await sequelize.authenticate();  
+    await sequelize.sync({ alter: true });  
     server.listen(process.env.SERVER_PORT, () => {
       console.log(`Сервер запущен на порту ${process.env.SERVER_PORT}`);
     });

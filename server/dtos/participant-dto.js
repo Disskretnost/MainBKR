@@ -11,7 +11,7 @@ class ParticipantDTO {
         this.userId = participant.userId;
         this.conferenceId = participant.conferenceId;
         this.joinedAt = participant.joinedAt;
-        this.isOnline = participant.isOnline; // Добавляем флаг онлайн-статуса
+        this.isOnline = participant.isOnline; 
     }
 }
 

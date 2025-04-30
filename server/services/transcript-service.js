@@ -1,19 +1,18 @@
-// services/transcript-service.js
+
 const Transcript = require('../models/Transcript');
-const User = require('../models/User'); // Import the User model
+const User = require('../models/User'); 
 const ApiError = require('../exceptions/apiError');
-const TranscriptDTO = require('../dtos/transcript-dto'); // Import TranscriptDTO
+const TranscriptDTO = require('../dtos/transcript-dto'); 
 
 
 class TranscriptService {
-    // Create a new transcript
     async createTranscript(userId, conferenceId, message) {
       try {
         await Transcript.create({
           userId,
           conferenceId,
           message,
-          timestamp: new Date() // Рекомендую сохранять время создания
+          timestamp: new Date() 
       });
       } catch (error) {
         console.error(error);
@@ -26,20 +25,20 @@ class TranscriptService {
       try {
         const transcripts = await Transcript.findAll({
           where: { conferenceId: conferenceId },
-          order: [['timestamp', 'ASC']], // Сортировка по времени
+          order: [['timestamp', 'ASC']], 
           include: [
             {
               model: User,
-              attributes: ['username'], // Получаем только username
-              required: false // LEFT JOIN (если у записи нет user, она всё равно попадёт в результат)
+              attributes: ['username'], 
+              required: false 
             }
           ],
           raw: true,
-          nest: true // ← для корректного отображения вложенных моделей
+          nest: true 
         });
         console.log(transcripts);
   
-        return transcripts.map(transcript => new TranscriptDTO(transcript)); // Map to DTOs
+        return transcripts.map(transcript => new TranscriptDTO(transcript)); 
   
       } catch (error) {
         console.error(error);

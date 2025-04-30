@@ -1,7 +1,7 @@
 const participantService = require('../services/ParticipantService');
 
 class ParticipantController {
-  // Получение всех участников (без фильтрации)
+
   async getAllParticipants(req, res, next) {
     try {
       const participants = await participantService.getAllParticipants();
@@ -11,7 +11,6 @@ class ParticipantController {
     }
   }
 
-  // Получение онлайн-участников определённой конференции
   async getOnlineParticipants(req, res, next) {
     try {
       const { conferenceId } = req.params;

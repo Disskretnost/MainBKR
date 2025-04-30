@@ -1,3 +1,6 @@
+
+import { franc } from 'franc';
+
 export default class SpeechRecognitionManager {
   constructor({ socket, userId, roomId }) {
     this.socket = socket;
@@ -5,42 +8,89 @@ export default class SpeechRecognitionManager {
     this.roomId = roomId;
 
     this.supported = false;
+    this.recognition = null;
 
-    // Строка, которую будем отправлять каждые 5 секунд
-    this.textToSend = "Тестовое сообщение для отправки каждую 5 секунду";
-
-    // Добавляем заглушку для метода stop
-    this.stop = () => {
-      console.log('Метод stop был вызван (заглушка)');
-    };
-    this.start = () => {
-      console.log('Метод s был вызван (заглушка)');
-    };
-
-    this._startMessageSending();
+    this._init();
   }
 
-  // Метод для старта отправки сообщений каждую 5 секунду
-  _startMessageSending() {
-    // Отправка сообщения каждую 5 секунду
-    setInterval(() => {
-      this._sendMessage();
-    }, 5000);
+  _init() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn('Браузер не поддерживает SpeechRecognition');
+      return;
+    }
+
+    this.supported = true;
+    this.recognition = new SpeechRecognition();
+
+    this.recognition.continuous = true;
+    this.recognition.interimResults = false;
+    this.recognition.lang = 'ru-RU';  
+
+    this.recognition.onresult = this._handleResult.bind(this);
+    this.recognition.onerror = this._handleError.bind(this);
+    this.recognition.onstart = () => console.log('🎙️ Распознавание речи запущено');
+    this.recognition.onend = () => {
+      console.log('🔁 Распознавание завершено, перезапуск...');
+      this.start(); 
+    };
   }
 
-  // Метод для отправки сообщения
-  _sendMessage() {
-    const lang3 = 'ru'; // Установим язык как английский (можно заменить на любой другой, если нужно)
+  _handleResult(event) {
+    let finalTranscript = '';
+    for (let i = event.resultIndex; i < event.results.length; ++i) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript;
+      }
+    }
 
-    // Отправка сообщения через сокет
-    if (this.socket) {
+    const whitelist = [
+      'en', // Английский
+      'zh', // Мандарин (китайский)
+      'es', // Испанский
+      'fr', // Французский
+      'ar', // Арабский
+      'pt', // Португальский
+      'de', // Немецкий
+      'ru', // Русский
+      'ja', // Японский
+      'hi'  // Хинди
+    ];
+    
+
+    if (finalTranscript && this.socket) {
+      let lang3 = franc(finalTranscript, { whitelist }); 
+
+      if (lang3 === 'und') {
+        console.warn('Не удалось определить язык');
+      }
       this.socket.emit('newMessage', {
         userId: this.userId,
         roomId: this.roomId,
-        text: this.textToSend,
-        isSpeech: false,  // это не речь, а обычное сообщение
-        lang3,  // Язык, определённый как 'eng' (английский)
+        text: finalTranscript,
+        isSpeech: true,
+        lang3, 
       });
+    }
+  }
+
+  _handleError(event) {
+    console.error('SpeechRecognition error:', event.error);
+  }
+
+  start() {
+    if (this.supported) {
+      try {
+        this.recognition.start();
+      } catch (e) {
+        console.warn('Распознавание уже запущено или ошибка запуска');
+      }
+    }
+  }
+
+  stop() {
+    if (this.supported && this.recognition) {
+      this.recognition.stop();
     }
   }
 }

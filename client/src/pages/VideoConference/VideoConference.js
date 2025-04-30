@@ -1,10 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import VideoConferenceManager from '../../socket/VideoConferenceManager';
-import AccessCodePanel from '../../components/AccessCodePanel/AccessCodePanel';
-import ChatPanel from '../../components/ChatPanel/ChatPanel';
-import './VideoConference.css';
 import { IconButton } from '@mui/material';
 import CallEndIcon from '@mui/icons-material/CallEnd';
 import MicIcon from '@mui/icons-material/Mic';
@@ -12,28 +8,39 @@ import MicOffIcon from '@mui/icons-material/MicOff';
 import ScreenShareIcon from '@mui/icons-material/ScreenShare';
 import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
 import ChatIcon from '@mui/icons-material/Chat';
+import SubtitlesIcon from '@mui/icons-material/Subtitles';
+import SubtitlesOffIcon from '@mui/icons-material/SubtitlesOff';
+
+import VideoConferenceManager from '../../socket/VideoConferenceManager';
+import AccessCodePanel from '../../components/AccessCodePanel/AccessCodePanel';
+import ChatPanel from '../../components/ChatPanel/ChatPanel';
 import { addMessage } from './../../slices/chatSlice';
 import getGridClass from '../../utils/conference/getGridClass';
 import handleToggleMicFn from '../../utils/conference/handleToggleMic';
 import handleToggleScreenSharingFn from '../../utils/conference/handleToggleScreenSharing';
 import handleToggleChatFn from '../../utils/conference/handleToggleChat';
 
+import './VideoConference.css';
 
 const VideoCall = () => {
   const roomName = useSelector(state => state.conference.id);
   const accessCode = useSelector(state => state.conference.accessCode);
   const { id, username } = useSelector(state => state.auth.user);
+  const primaryLanguage = useSelector(state => state.languages.primaryLanguage);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
   const conferenceManagerRef = useRef(null);
   const videoContainerRef = useRef(null);
   const streamsCountRef = useRef(0);
+
   const [isExiting, setIsExiting] = useState(false);
   const [micEnabled, setMicEnabled] = useState(true);
   const [screenSharing, setScreenSharing] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [subtitles, setSubtitles] = useState({});
-  
+  const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
 
   const updateGridClass = () => {
     const gridClass = getGridClass(streamsCountRef.current);
@@ -91,7 +98,7 @@ const VideoCall = () => {
         video.className = 'video-element';
         video.srcObject = stream;
         container.appendChild(video);
-        console.log("Создание субтитров для", clientId)
+
         const subtitleContainer = document.createElement('div');
         subtitleContainer.className = 'subtitle-container';
         subtitleContainer.id = `subtitle-${clientId}`;
@@ -123,14 +130,13 @@ const VideoCall = () => {
     onError: (message) => console.error(message),
 
     onCleanup: () => {
-      console.log('Все ресурсы очищены');
       streamsCountRef.current = 0;
       if (videoContainerRef.current) {
         videoContainerRef.current.className = 'video-container';
       }
     },
 
-    onSpeechRecognized: (text) => console.log('Распознано:', text),
+    onSpeechRecognized: (text) => console.log('Speech recognized:', text),
   };
 
   useEffect(() => {
@@ -148,26 +154,29 @@ const VideoCall = () => {
     const socket = conferenceManagerRef.current.socket;
   
     const handleSubtitles = async ({ userId, text, lang3 }) => {
+      if (!subtitlesEnabled) return;
+  
+      // Если языки одинаковые, ничего не делаем
+      if (lang3 === primaryLanguage) {
+        return;
+      }
+  
+      // Если языки разные, выполняем перевод
       try {
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=${lang3}&tl=en&q=${encodeURIComponent(text)}`;
+        const targetLang = primaryLanguage;
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=${lang3}&tl=${targetLang}&q=${encodeURIComponent(text)}`;
         const res = await fetch(url);
         const data = await res.json();
   
         const translated = data[0]?.[0]?.[0] ?? text;
   
-        console.log('📝 Перевод:', translated);
-  
-        setSubtitles(prevSubtitles => ({
-          ...prevSubtitles,
+        setSubtitles(prev => ({
+          ...prev,
           [userId]: translated,
         }));
       } catch (err) {
-        console.error('❌ Ошибка при переводе:', err);
-  
-        setSubtitles(prevSubtitles => ({
-          ...prevSubtitles,
-          [userId]: text,
-        }));
+        console.error('Ошибка перевода:', err);
+        // Ошибка игнорируется, не обновляем субтитры
       }
     };
   
@@ -176,11 +185,9 @@ const VideoCall = () => {
     return () => {
       socket.off('subtitles', handleSubtitles);
     };
-  }, []);
-  
+  }, [subtitlesEnabled, primaryLanguage]);
   
 
-  // 🔄 Синхронизация субтитров с DOM
   useEffect(() => {
     Object.entries(subtitles).forEach(([clientId, text]) => {
       const subtitleEl = document.getElementById(`subtitle-${clientId}`);
@@ -193,6 +200,8 @@ const VideoCall = () => {
   useEffect(() => {
     if (!conferenceManagerRef.current) return;
 
+    const socket = conferenceManagerRef.current.socket;
+
     const handleNewMessage = (message) => {
       dispatch(addMessage({
         id: message.timestamp || Date.now(),
@@ -203,11 +212,24 @@ const VideoCall = () => {
       }));
     };
 
-    const socket = conferenceManagerRef.current.socket;
     socket.on('message', handleNewMessage);
 
-    return () => socket.off('message', handleNewMessage);
+    return () => {
+      socket.off('message', handleNewMessage);
+    };
   }, [dispatch, username]);
+
+  useEffect(() => {
+    if (!subtitlesEnabled) {
+      // Очистить все субтитры
+      Object.keys(subtitles).forEach(clientId => {
+        const subtitleEl = document.getElementById(`subtitle-${clientId}`);
+        if (subtitleEl) {
+          subtitleEl.innerText = '';
+        }
+      });
+    }
+  }, [subtitlesEnabled]);
 
   return (
     <div className="video-conference-container">
@@ -236,6 +258,14 @@ const VideoCall = () => {
           </IconButton>
 
           <IconButton
+            onClick={() => setSubtitlesEnabled(prev => !prev)}
+            className="toggle-subtitles-button"
+            aria-label="Вкл/выкл субтитры"
+          >
+            {subtitlesEnabled ? <SubtitlesIcon fontSize="large" /> : <SubtitlesOffIcon fontSize="large" />}
+          </IconButton>
+
+          <IconButton
             onClick={handleToggleChat}
             className="toggle-chat-button"
             aria-label="Чат"
@@ -244,6 +274,7 @@ const VideoCall = () => {
           >
             <ChatIcon fontSize="large" />
           </IconButton>
+
         </div>
       </div>
     </div>

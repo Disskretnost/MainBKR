@@ -1,4 +1,4 @@
-// user-dto.js
+
 class UserDTO {
     id;
     phone;
@@ -6,7 +6,7 @@ class UserDTO {
     username;
 
     constructor(user) {
-        this.id = user.id; // Здесь используем правильное поле 'id' из объекта User
+        this.id = user.id; 
         this.phone = user.phone;
         this.email = user.email;
         this.username = user.username;

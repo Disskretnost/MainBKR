@@ -43,7 +43,7 @@ const FileStatus = sequelize.define('file_status', {
   ]
 });
 
-// Связи
+
 User.hasMany(FileStatus, { 
   foreignKey: 'userId',
   as: 'fileStatuses'

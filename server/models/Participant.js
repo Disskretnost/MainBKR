@@ -1,4 +1,4 @@
-// models/Participant.js
+
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
 const User = require('./User');
@@ -38,7 +38,7 @@ const Participant = sequelize.define('participant', {
     allowNull: false
   },
 }, {
-  timestamps: false, // Отключаем автоматические createdAt/updatedAt
+  timestamps: false, 
   indexes: [
     { fields: ['conferenceId'] },
     { fields: ['userId'] },
@@ -46,7 +46,7 @@ const Participant = sequelize.define('participant', {
   ]
 });
 
-// Связи остаются без изменений
+
 User.hasMany(Participant, { foreignKey: 'userId' });
 Participant.belongsTo(User, { foreignKey: 'userId' });
 

@@ -1,16 +1,14 @@
-// mediasoupHandler.js
+
 const mediasoup = require('mediasoup');
 const { v4: uuidv4 } = require('uuid');
 const participantService = require('../services/ParticipantService');
-// Основные модули Node.js
 const path = require('path');
-const fs = require('fs'); // Убедитесь, что fs импортирован
+const fs = require('fs'); 
 const officegen = require('officegen');
 const transcriptService = require('./../services/transcript-service');
 const ConferenceFileService = require('../services/conferenceFile-service');
 
 
-// Mediasoup worker and room management
 let worker;
 let rooms = {};
 let peers = {};
@@ -199,7 +197,6 @@ const cleanupPeer = (socketId) => {
   
   delete peers[socketId];
 
-  // Remove socket from room
   if (rooms[roomName]) {
     rooms[roomName].peers = rooms[roomName].peers.filter(id => id !== socketId);
     
@@ -217,17 +214,14 @@ const getProducersList = (socketId) => {
 
   producers.forEach(producerData => {
     if (producerData.socketId !== socketId && producerData.roomName === roomName) {
-      // Получаем userId из socketToUserMap по socketId producer-а
       const userInfo = socketToUserMap.get(producerData.socketId);
       console.log(userInfo)
 
-      // Проверяем, найден ли пользователь в socketToUserMap
       if (userInfo) {
-        producerList = [...producerList, { producerId: producerData.producer.id, clientId: userInfo.id}]; // Возвращаем объект с userId
+        producerList = [...producerList, { producerId: producerData.producer.id, clientId: userInfo.id}]; 
       } else {
         console.warn(`Не найден userId для socketId: ${producerData.socketId}`);
-        // Можно вернуть null или пропустить producer, если userId не найден
-        // producerList = [...producerList, { producerId: producerData.producer.id, clientId: null }]; // Или вернуть null
+
       }
     }
   });
@@ -236,7 +230,7 @@ const getProducersList = (socketId) => {
 };
 
 const initializeSocketHandlers = (io) => {
-  // Create worker when initializings
+
   worker = createWorker();
 
   const connections = io.of('/mediasoup');
@@ -397,18 +391,15 @@ const initializeSocketHandlers = (io) => {
       const userData = socketToUserMap.get(socket.id);
         
       console.log(`User disconnecting:`, userData);
-    
-      // 2. Change status in the database
+
       await participantService.deactivateParticipant(
         userData.roomName,
         userData.id
       );
-    
-      // 3. Check if there are any online users in the room
+
       const onlineParticipants = await participantService.getOnlineParticipants(userData.roomName);
       console.log(onlineParticipants);
-    
-      // 4. Clear local data
+
       socketToUserMap.delete(socket.id);
       cleanupPeer(socket.id);
     
@@ -421,7 +412,7 @@ const initializeSocketHandlers = (io) => {
           let currentParagraph = null;
           
           for (const transcript of transcripts) {
-            // Если пользователь изменился или это первое сообщение, создаем новый параграф
+           
             if (transcript.userId !== lastUserId) {
               currentParagraph = docx.createP();
               currentParagraph.addText(`${transcript.username}: `, { font_size: 12, bold: true });
@@ -438,7 +429,7 @@ const initializeSocketHandlers = (io) => {
           const out = fs.createWriteStream(outputPath);
           docx.generate(out);
           await ConferenceFileService.addFileToConference(
-            userData.roomName, // conferenceId
+            userData.roomName, 
             filename,
             outputPath
           );

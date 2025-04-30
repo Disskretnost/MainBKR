@@ -1,9 +1,9 @@
-// services/participant-service.js
+
 const Participant = require('../models/Participant');
 const User = require('../models/User');
 const Conference = require('../models/Conference');
 const ApiError = require('../exceptions/apiError');
-const ParticipantDTO = require('../dtos/participant-dto'); // Предполагается, что у вас есть DTO
+const ParticipantDTO = require('../dtos/participant-dto'); 
 
 class ParticipantService {
   async addParticipant(conferenceId, userId) {
@@ -35,7 +35,7 @@ class ParticipantService {
           conferenceId,
           isOnline: true
         },
-        attributes: ['id', 'userId', 'conferenceId', 'joinedAt'], // Только поля из DTO
+        attributes: ['id', 'userId', 'conferenceId', 'joinedAt'], 
         order: [['joinedAt', 'ASC']]
       });
       //console.log(participants)

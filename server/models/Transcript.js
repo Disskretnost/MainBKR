@@ -1,4 +1,4 @@
-// models/Transcript.js
+
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
 const User = require('./User');
@@ -29,23 +29,22 @@ const Transcript = sequelize.define('transcript', {
     onDelete: 'CASCADE'
   },
   message: {
-    type: DataTypes.TEXT, // Use TEXT for longer transcriptions
+    type: DataTypes.TEXT, 
     allowNull: false
   },
   timestamp: {
     type: DataTypes.DATE,
     allowNull: false,
-    defaultValue: DataTypes.NOW // Records the exact time
+    defaultValue: DataTypes.NOW 
   }
 }, {
-  timestamps: false, // Отключаем автоматические createdAt/updatedAt
+  timestamps: false, 
   indexes: [
     { fields: ['conferenceId'] },
     { fields: ['userId'] }
   ]
 });
 
-// Define Associations (Relationships)
 User.hasMany(Transcript, { foreignKey: 'userId' });
 Transcript.belongsTo(User, { foreignKey: 'userId' });
 

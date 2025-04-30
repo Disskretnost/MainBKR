@@ -64,37 +64,56 @@
 
 /* Стили для панели навигации */
 .nav-bar {
-    width: 100%;
-    background-color: rgba(0, 0, 0, 0.3); /* Полупрозрачный фон */
-    padding: 10px 0;
-    position: fixed; /* Фиксированная позиция вверху */
-    top: 0;
-    left: 0;
-    z-index: 100; /* Обеспечиваем наложение поверх других элементов */
-  }
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.3); /* Полупрозрачный фон */
+  padding: 10px 0;
+  position: fixed; /* Фиксированная позиция вверху */
+  top: 0;
+  left: 0;
+  z-index: 100; /* Обеспечиваем наложение поверх других элементов */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-list {
+  list-style: none;
+  display: flex;
+  justify-content: space-between; /* Равномерное распределение элементов */
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+
+/* Стили для элементов навигации */
+.nav-item {
+  margin: 0;
+}
+
+/* Стили для ссылок */
+.nav-link {
+  color: white;  /* Белый цвет для ссылок */
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+  margin: 0 10px;  /* Отступ между ссылками */
   
-  .nav-list {
-    list-style: none;
-    display: flex;
-    justify-content: space-around; /* Равномерное распределение элементов */
-    align-items: center;
-    margin: 0;
-    padding: 0;
-    width: 100%; /* На всю ширину контейнера */
-  }
-  
-  .nav-item {
-    margin: 0;
-  }
-  
-  .nav-link {
-    color: #fff;
-    text-decoration: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    transition: background-color 0.3s ease;
-  }
-  
-  .nav-link:hover {
-    background-color: rgba(255, 255, 255, 0.1); /* Подсветка при наведении */
-  }
+}
+
+/* Эффект подсветки при наведении */
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1); /* Подсветка при наведении */
+}
+
+/* Контейнер для ссылок с выравниванием вправо */
+.nav-links {
+  display: flex;
+  justify-content: flex-end;  /* Выравнивание ссылок по правому краю */
+  flex-grow: 1;  /* Заставляем блок занимать оставшееся пространство */
+}
+
+.nav-link-right {
+  color: white;  /* Белый цвет для правых ссылок */
+}

@@ -231,3 +231,42 @@
   z-index: 0;
 
 }
+
+.subtitle-container:empty {
+  display: none;
+}
+
+
+.toggle-subtitles-button {
+  margin-left: 16px;
+  background-color: #fbc02d; /* желтый, как индикатор включения субтитров */
+  color: white;
+  padding: 12px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+.toggle-subtitles-button:hover {
+  background-color: #f57f17; /* более темный желтый при наведении */
+  transform: scale(1.1);
+}
+
+.toggle-subtitles-button svg {
+  fill: white;
+}
+
+/* Состояние выключенных субтитров */
+.toggle-subtitles-button.off {
+  background-color: #bdbdbd; /* серый цвет, если субтитры выключены */
+}
+
+.toggle-subtitles-button.off:hover {
+  background-color: #9e9e9e;
+}
+
+/* Убедитесь, что кнопка скрыта или неактивна, если субтитры уже включены */
+.toggle-subtitles-button.hidden {
+  opacity: 0;
+  pointer-events: none;
+}

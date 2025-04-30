@@ -1,13 +1,13 @@
-// services/conference-service.js
-const Conference = require('../models/Conference'); // Укажите правильный путь к вашим моделям
-const  User  = require('../models/User'); // Укажите правильный путь к вашим моделям
-const ApiError = require('../exceptions/apiError'); // Убедитесь, что путь к ApiError правильный
-const ConferenceDTO = require('../dtos/room-dto'); // Импортируйте ConferenceDTO
+
+const Conference = require('../models/Conference'); 
+const  User  = require('../models/User'); 
+const ApiError = require('../exceptions/apiError'); 
+const ConferenceDTO = require('../dtos/room-dto'); 
 
 
 
 class ConferenceService {
-  // Создание комнаты
+
   async createConference(ownerId, accessCode) {
     try {
       const conference = await Conference.create({
@@ -32,14 +32,14 @@ class ConferenceService {
     const conferenceDto = new ConferenceDTO(conference);
     return conferenceDto;
   }
-  // Удаление комнаты
+
   async deleteConference(id) {
-    const conference = await Conference.findByPk(id); // Поиск комнаты по ID
+    const conference = await Conference.findByPk(id); 
 
     if (!conference) {
       throw ApiError.NotFound('Комната не найдена');
     }
-    await conference.destroy(); // Удаление комнаты
+    await conference.destroy(); 
   }
 }
 

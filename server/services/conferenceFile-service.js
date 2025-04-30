@@ -7,16 +7,14 @@ const Participant = require('./../models/Participant');
 const FileStatus = require('../models/FileStatus'); 
 
 class ConferenceFileService {
-  // Добавление файла к конференции
+
   async addFileToConference(conferenceId, filename, filepath) {
     try {
-      // Проверяем существование конференции
       const conference = await Conference.findByPk(conferenceId);
       if (!conference) {
         throw ApiError.NotFound('Конференция не найдена');
       }
 
-      // Создаем запись о файле
       const file = await ConferenceFile.create({
         conferenceId,
         filename,
@@ -30,7 +28,6 @@ class ConferenceFileService {
     }
   }
 
-  // Получение информации о файле конференции
   async getConferenceFile(conferenceId) {
     try {
       const file = await ConferenceFile.findOne({ 
@@ -48,7 +45,6 @@ class ConferenceFileService {
     }
   }
 
-  // Удаление файла конференции
   async deleteConferenceFile(conferenceId) {
     try {
       const file = await ConferenceFile.findOne({ 
@@ -77,8 +73,6 @@ class ConferenceFileService {
 
         const conferenceIds = userParticipation.map(p => p.conferenceId);
 
-    
-        // 2. Находим все файлы этих конференций
         const files = await ConferenceFile.findAll({
           where: {
               conferenceId: conferenceIds
@@ -87,10 +81,10 @@ class ConferenceFileService {
               model: FileStatus,
               as: 'statuses',
               where: {
-                  userId: userId,       // Фильтр по конкретному пользователю
-                  status: 'visible'    // Только видимые статусы
+                  userId: userId,      
+                  status: 'visible'    
               },
-              required: true           // INNER JOIN (только файлы с подходящим статусом)
+              required: true           
           }]
       });
 

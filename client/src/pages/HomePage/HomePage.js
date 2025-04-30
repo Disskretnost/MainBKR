@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { createConference } from '../../slices/roomSlice';
@@ -6,18 +6,19 @@ import './HomePage.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faDoorOpen } from '@fortawesome/free-solid-svg-icons';
 import RoomService from '../../services/RoomService';
+import { Link } from 'react-router-dom'; 
 
 const HomePage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const {id} = useSelector(state => state.auth.user);
+  const { id } = useSelector(state => state.auth.user);
 
   const handleCreateRoom = (e) => {
     e.preventDefault();
 
     RoomService.createConference(id)
       .then(result => {
-        const { id, ownerId, accessCode, createdAt, isActive } = result; // Получаем все поля
+        const { id, ownerId, accessCode, createdAt, isActive } = result; 
         dispatch(createConference({
           id,
           ownerId,
@@ -40,7 +41,15 @@ const HomePage = () => {
   return (
     <div className="home-page-container">
       <nav className="nav-bar">
-        {/* ... (панель навигации) ... */}
+        <div className="nav-links">
+
+          <Link to="/files" className="nav-link">
+            Files
+          </Link>
+          <Link to="/language" className="nav-link">
+            Language
+          </Link>
+        </div>
       </nav>
 
       <h1 className="home-page-title">Добро пожаловать в VideoTalk</h1>
@@ -51,14 +60,13 @@ const HomePage = () => {
           onClick={handleCreateRoom}
         >
           <FontAwesomeIcon icon={faPlus} className="button-icon" />
-          create a video conference
+          Create a video conference
         </button>
         <button className="join-button" onClick={handleJoinRoom}>
           <FontAwesomeIcon icon={faDoorOpen} className="button-icon" />
           Join a video conference
         </button>
       </div>
-
     </div>
   );
 };
