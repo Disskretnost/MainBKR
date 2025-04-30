@@ -1,0 +1,37 @@
+
+
+.home-button-container {
+    position: fixed;
+    bottom: 30px; /* Было 20px */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    width: auto;
+}
+
+.home-button {
+    padding: 12px 30px; /* Было 12px 30px */
+    background: #4a6bff;
+    color: white;
+    border: none;
+    border-radius: 25px; /* Было 25px */
+    font-size: 16px; /* Было 16px */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* Было 0 4px 8px */
+    white-space: nowrap;
+}
+
+.home-button:hover {
+    background: #3a5bef;
+    transform: translateY(-2px); /* Было -2px */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25); /* Было 0 6px 12px */
+}
+
+.home-button:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2); /* Было 0 2px 4px */
+}
+
+
+

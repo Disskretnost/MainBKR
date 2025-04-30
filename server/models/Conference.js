@@ -1,26 +1,37 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
-const User = require('./User');  // Импортируем модель User
+const User = require('./User');  
+const Token = require('./Token');  
 
-const Conference = sequelize.define('conference', {
-  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  title: { type: DataTypes.STRING, allowNull: false },
-  description: { type: DataTypes.TEXT, allowNull: true },
-  date: { type: DataTypes.DATE, allowNull: false },
-  isActive: { type: DataTypes.BOOLEAN, defaultValue: true },
-  userId: {  
+const Conference = sequelize.define('conference', {  
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },  
+  ownerId: { 
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: false, 
     references: {
-      model: 'users',  // Ссылаемся на таблицу пользователей
+      model: 'users', 
       key: 'id'
     },
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE'  
+  },
+  accessCode: {  
+    type: DataTypes.STRING,
+    allowNull: false,
+    unique: true  
+  },
+  createdAt: {
+    type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW
+  },
+  isActive: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true 
   }
-}, { timestamps: true });
+}, {
+  timestamps: false  
+});
 
-// Связь: Один пользователь может иметь много конференций
-User.hasMany(Conference, { foreignKey: 'userId' });
-Conference.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(Conference, { foreignKey: 'ownerId', as: 'conferences' }); 
+Conference.belongsTo(User, { foreignKey: 'ownerId', as: 'owner' }); 
 
 module.exports = Conference;

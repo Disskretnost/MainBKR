@@ -1,281 +1,284 @@
-import React, { useEffect } from 'react';
-import io from 'socket.io-client';
-import { Device } from 'mediasoup-client';
+import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { IconButton } from '@mui/material';
+import CallEndIcon from '@mui/icons-material/CallEnd';
+import MicIcon from '@mui/icons-material/Mic';
+import MicOffIcon from '@mui/icons-material/MicOff';
+import ScreenShareIcon from '@mui/icons-material/ScreenShare';
+import StopScreenShareIcon from '@mui/icons-material/StopScreenShare';
+import ChatIcon from '@mui/icons-material/Chat';
+import SubtitlesIcon from '@mui/icons-material/Subtitles';
+import SubtitlesOffIcon from '@mui/icons-material/SubtitlesOff';
 
-const socketIo = io('wss://kucherenkoaleksanr.ru/mediasoup');
-const roomName = 'test1'; // Room name is hardcoded to 'test1'
+import VideoConferenceManager from '../../socket/VideoConferenceManager';
+import AccessCodePanel from '../../components/AccessCodePanel/AccessCodePanel';
+import ChatPanel from '../../components/ChatPanel/ChatPanel';
+import { addMessage } from './../../slices/chatSlice';
+import getGridClass from '../../utils/conference/getGridClass';
+import handleToggleMicFn from '../../utils/conference/handleToggleMic';
+import handleToggleScreenSharingFn from '../../utils/conference/handleToggleScreenSharing';
+import handleToggleChatFn from '../../utils/conference/handleToggleChat';
 
-let device;
-let rtpCapabilities;
-let producerTransport;
-let consumerTransports = [];
-let audioProducer;
-let videoProducer;
-let consumer;
-let isProducer = false;
+import './VideoConference.css';
 
-let params = {
-  encodings: [
-    { rid: 'r0', maxBitrate: 100000, scalabilityMode: 'S1T3' },
-    { rid: 'r1', maxBitrate: 300000, scalabilityMode: 'S1T3' },
-    { rid: 'r2', maxBitrate: 900000, scalabilityMode: 'S1T3' }
-  ],
-  codecOptions: {
-    videoGoogleStartBitrate: 1000
-  }
-};
+const VideoCall = () => {
+  const roomName = useSelector(state => state.conference.id);
+  const accessCode = useSelector(state => state.conference.accessCode);
+  const { id, username } = useSelector(state => state.auth.user);
+  const primaryLanguage = useSelector(state => state.languages.primaryLanguage);
 
-let audioParams;
-let videoParams = { params };
-let consumingTransports = [];
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
-const App = () => {
-  useEffect(() => {
-    socketIo.on('connection-success', ({ socketId }) => {
-      console.log(socketId);
-      getLocalStream();
-    });
+  const conferenceManagerRef = useRef(null);
+  const videoContainerRef = useRef(null);
+  const streamsCountRef = useRef(0);
 
-    socketIo.on('new-producer', ({ producerId }) => signalNewConsumerTransport(producerId));
+  const [isExiting, setIsExiting] = useState(false);
+  const [micEnabled, setMicEnabled] = useState(true);
+  const [screenSharing, setScreenSharing] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [subtitles, setSubtitles] = useState({});
+  const [subtitlesEnabled, setSubtitlesEnabled] = useState(false);
 
-    socketIo.on('producer-closed', ({ remoteProducerId }) => {
-      const producerToClose = consumerTransports.find(
-        (transportData) => transportData.producerId === remoteProducerId
-      );
-      producerToClose.consumerTransport.close();
-      producerToClose.consumer.close();
-      consumerTransports = consumerTransports.filter(
-        (transportData) => transportData.producerId !== remoteProducerId
-      );
-      const videoContainer = document.getElementById('videoContainer');
-      videoContainer.removeChild(document.getElementById(`td-${remoteProducerId}`));
-    });
-
-    return () => {
-      socketIo.off('connection-success');
-      socketIo.off('new-producer');
-      socketIo.off('producer-closed');
-    };
-  }, []);
-
-  const getLocalStream = () => {
-    navigator.mediaDevices
-      .getUserMedia({
-        audio: true,
-        video: { width: { min: 640, max: 1920 }, height: { min: 400, max: 1080 } }
-      })
-      .then(streamSuccess)
-      .catch((error) => {
-        console.log(error.message);
-      });
-  };
-
-  const streamSuccess = (stream) => {
-    const localVideo = document.getElementById('localVideo');
-    localVideo.srcObject = stream;
-
-    audioParams = { track: stream.getAudioTracks()[0], ...audioParams };
-    videoParams = { track: stream.getVideoTracks()[0], ...videoParams };
-
-    joinRoom();
-  };
-
-  const joinRoom = () => {
-    socketIo.emit('joinRoom', { roomName }, (data) => {
-      console.log(`Router RTP Capabilities... ${data.rtpCapabilities}`);
-      rtpCapabilities = data.rtpCapabilities;
-      createDevice();
-    });
-  };
-
-  const createDevice = async () => {
-    try {
-      device = new Device();
-      await device.load({ routerRtpCapabilities: rtpCapabilities });
-      console.log('Device RTP Capabilities', device.rtpCapabilities);
-      createSendTransport();
-    } catch (error) {
-      console.log(error);
-      if (error.name === 'UnsupportedError') {
-        console.warn('browser not supported');
-      }
+  const updateGridClass = () => {
+    const gridClass = getGridClass(streamsCountRef.current);
+    if (videoContainerRef.current) {
+      videoContainerRef.current.className = `video-container ${gridClass}`;
     }
   };
 
-  const createSendTransport = () => {
-    socketIo.emit('createWebRtcTransport', { consumer: false }, ({ params }) => {
-      if (params.error) {
-        console.log(params.error);
+  const handleToggleMic = () => handleToggleMicFn(conferenceManagerRef, setMicEnabled);
+  const handleToggleScreenSharing = () => handleToggleScreenSharingFn(conferenceManagerRef, screenSharing, setScreenSharing);
+  const handleToggleChat = () => handleToggleChatFn(setShowChat);
+
+  const handleExit = () => {
+    setIsExiting(true);
+    conferenceManagerRef.current?.cleanup();
+    navigate('/');
+  };
+
+  const callbacks = {
+    onLocalStream: (stream, socketId) => {
+      const existingVideo = document.getElementById(`video-${socketId}`);
+      if (existingVideo) {
+        existingVideo.srcObject = stream;
         return;
       }
 
-      console.log(params);
-      producerTransport = device.createSendTransport(params);
-      producerTransport.on('connect', async ({ dtlsParameters }, callback, errback) => {
-        try {
-          await socketIo.emit('transport-connect', { dtlsParameters });
-          callback();
-        } catch (error) {
-          errback(error);
-        }
-      });
+      const container = document.createElement('div');
+      container.className = 'stream-container';
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.autoplay = true;
+      video.muted = true;
+      video.className = 'video-element';
+      video.id = `video-${socketId}`;
 
-      producerTransport.on('produce', async (parameters, callback, errback) => {
-        console.log(parameters);
+      container.appendChild(video);
+      videoContainerRef.current.appendChild(container);
+      streamsCountRef.current += 1;
+      updateGridClass();
+    },
 
-        try {
-          await socketIo.emit(
-            'transport-produce',
-            {
-              kind: parameters.kind,
-              rtpParameters: parameters.rtpParameters,
-              appData: parameters.appData
-            },
-            ({ id, producersExist }) => {
-              callback({ id });
-              if (producersExist) getProducers();
-            }
-          );
-        } catch (error) {
-          errback(error);
-        }
-      });
-
-      connectSendTransport();
-    });
-  };
-
-  const connectSendTransport = async () => {
-    audioProducer = await producerTransport.produce(audioParams);
-    videoProducer = await producerTransport.produce(videoParams);
-
-    audioProducer.on('trackended', () => {
-      console.log('audio track ended');
-    });
-
-    audioProducer.on('transportclose', () => {
-      console.log('audio transport ended');
-    });
-
-    videoProducer.on('trackended', () => {
-      console.log('video track ended');
-    });
-
-    videoProducer.on('transportclose', () => {
-      console.log('video transport ended');
-    });
-  };
-
-  const signalNewConsumerTransport = async (remoteProducerId) => {
-    if (consumingTransports.includes(remoteProducerId)) return;
-
-    consumingTransports.push(remoteProducerId);
-
-    await socketIo.emit('createWebRtcTransport', { consumer: true }, ({ params }) => {
-      if (params.error) {
-        console.log(params.error);
-        return;
-      }
-      console.log(`PARAMS... ${params}`);
-
-      let consumerTransport;
-      try {
-        consumerTransport = device.createRecvTransport(params);
-      } catch (error) {
-        console.log(error);
-        return;
-      }
-
-      consumerTransport.on('connect', async ({ dtlsParameters }, callback, errback) => {
-        try {
-          await socketIo.emit('transport-recv-connect', {
-            dtlsParameters,
-            serverConsumerTransportId: params.id
-          });
-          callback();
-        } catch (error) {
-          errback(error);
-        }
-      });
-
-      connectRecvTransport(consumerTransport, remoteProducerId, params.id);
-    });
-  };
-
-  const getProducers = () => {
-    socketIo.emit('getProducers', (producerIds) => {
-      console.log(producerIds);
-      producerIds.forEach(signalNewConsumerTransport);
-    });
-  };
-
-  const connectRecvTransport = async (consumerTransport, remoteProducerId, serverConsumerTransportId) => {
-    await socketIo.emit(
-      'consume',
-      {
-        rtpCapabilities: device.rtpCapabilities,
-        remoteProducerId,
-        serverConsumerTransportId
-      },
-      async ({ params }) => {
-        if (params.error) {
-          console.log('Cannot Consume');
+    onRemoteStream: (stream, producerId, kind, clientId) => {
+      if (kind === 'video') {
+        const existingVideo = document.getElementById(`video-${producerId}`);
+        if (existingVideo) {
+          existingVideo.srcObject = stream;
           return;
         }
 
-        console.log(`Consumer Params ${params}`);
-        const consumer = await consumerTransport.consume({
-          id: params.id,
-          producerId: params.producerId,
-          kind: params.kind,
-          rtpParameters: params.rtpParameters
-        });
+        const container = document.createElement('div');
+        container.className = 'stream-container';
+        const video = document.createElement('video');
+        video.id = `video-${producerId}`;
+        video.autoplay = true;
+        video.className = 'video-element';
+        video.srcObject = stream;
+        container.appendChild(video);
 
-        consumerTransports = [
-          ...consumerTransports,
-          {
-            consumerTransport,
-            serverConsumerTransportId: params.id,
-            producerId: remoteProducerId,
-            consumer
-          }
-        ];
+        const subtitleContainer = document.createElement('div');
+        subtitleContainer.className = 'subtitle-container';
+        subtitleContainer.id = `subtitle-${clientId}`;
+        subtitleContainer.innerText = subtitles[clientId] || '';
+        container.appendChild(subtitleContainer);
 
-        const newElem = document.createElement('div');
-        newElem.setAttribute('id', `td-${remoteProducerId}`);
-
-        if (params.kind === 'audio') {
-          newElem.innerHTML = `<audio id="${remoteProducerId}" autoplay></audio>`;
-        } else {
-          newElem.setAttribute('class', 'remoteVideo');
-          newElem.innerHTML = `<video id="${remoteProducerId}" autoplay class="video"></video>`;
-        }
-
-        const videoContainer = document.getElementById('videoContainer');
-        videoContainer.appendChild(newElem);
-        const { track } = consumer;
-        document.getElementById(remoteProducerId).srcObject = new MediaStream([track]);
-        socketIo.emit('consumer-resume', { serverConsumerId: params.serverConsumerId });
+        videoContainerRef.current.appendChild(container);
+        streamsCountRef.current += 1;
+        updateGridClass();
+      } else if (kind === 'audio') {
+        const audio = document.createElement('audio');
+        audio.id = `audio-${producerId}`;
+        audio.autoplay = true;
+        audio.srcObject = stream;
+        audio.hidden = true;
+        document.body.appendChild(audio);
       }
-    );
+    },
+
+    onRemoteStreamEnded: (producerId) => {
+      const element = document.getElementById(`video-${producerId}`);
+      if (element?.parentNode && videoContainerRef.current.contains(element.parentNode)) {
+        videoContainerRef.current.removeChild(element.parentNode);
+        streamsCountRef.current = Math.max(0, streamsCountRef.current - 1);
+        updateGridClass();
+      }
+    },
+
+    onError: (message) => console.error(message),
+
+    onCleanup: () => {
+      streamsCountRef.current = 0;
+      if (videoContainerRef.current) {
+        videoContainerRef.current.className = 'video-container';
+      }
+    },
+
+    onSpeechRecognized: (text) => console.log('Speech recognized:', text),
   };
 
+  useEffect(() => {
+    if (!roomName) return;
+
+    conferenceManagerRef.current = new VideoConferenceManager(roomName, accessCode, id, callbacks);
+    conferenceManagerRef.current.initialize();
+
+    return () => conferenceManagerRef.current?.cleanup();
+  }, [roomName, accessCode]);
+
+  useEffect(() => {
+    if (!conferenceManagerRef.current) return;
+  
+    const socket = conferenceManagerRef.current.socket;
+  
+    const handleSubtitles = async ({ userId, text, lang3 }) => {
+      if (!subtitlesEnabled) return;
+  
+      // Если языки одинаковые, ничего не делаем
+      if (lang3 === primaryLanguage) {
+        return;
+      }
+  
+      // Если языки разные, выполняем перевод
+      try {
+        const targetLang = primaryLanguage;
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=${lang3}&tl=${targetLang}&q=${encodeURIComponent(text)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+  
+        const translated = data[0]?.[0]?.[0] ?? text;
+  
+        setSubtitles(prev => ({
+          ...prev,
+          [userId]: translated,
+        }));
+      } catch (err) {
+        console.error('Ошибка перевода:', err);
+        // Ошибка игнорируется, не обновляем субтитры
+      }
+    };
+  
+    socket.on('subtitles', handleSubtitles);
+  
+    return () => {
+      socket.off('subtitles', handleSubtitles);
+    };
+  }, [subtitlesEnabled, primaryLanguage]);
+  
+
+  useEffect(() => {
+    Object.entries(subtitles).forEach(([clientId, text]) => {
+      const subtitleEl = document.getElementById(`subtitle-${clientId}`);
+      if (subtitleEl) {
+        subtitleEl.innerText = text;
+      }
+    });
+  }, [subtitles]);
+
+  useEffect(() => {
+    if (!conferenceManagerRef.current) return;
+
+    const socket = conferenceManagerRef.current.socket;
+
+    const handleNewMessage = (message) => {
+      dispatch(addMessage({
+        id: message.timestamp || Date.now(),
+        text: message.text,
+        sender: message.username,
+        isOwn: message.username === username,
+        timestamp: message.timestamp || Date.now()
+      }));
+    };
+
+    socket.on('message', handleNewMessage);
+
+    return () => {
+      socket.off('message', handleNewMessage);
+    };
+  }, [dispatch, username]);
+
+  useEffect(() => {
+    if (!subtitlesEnabled) {
+      // Очистить все субтитры
+      Object.keys(subtitles).forEach(clientId => {
+        const subtitleEl = document.getElementById(`subtitle-${clientId}`);
+        if (subtitleEl) {
+          subtitleEl.innerText = '';
+        }
+      });
+    }
+  }, [subtitlesEnabled]);
+
   return (
-    <div id="video">
-      <table className="mainTable">
-        <tbody>
-          <tr>
-            <td className="localColumn">
-              <video id="localVideo" autoPlay className="video" muted></video>
-            </td>
-            <td className="remoteColumn">
-              <div id="videoContainer"></div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <div className="video-conference-container">
+      <div className="main-content">
+        <div className="video-wrapper">
+          <div className="video-container" ref={videoContainerRef} />
+        </div>
+
+        {showChat && <ChatPanel onClose={handleToggleChat} conferenceManager={conferenceManagerRef.current} />}
+      </div>
+
+      <div className="access-panel-wrapper">
+        <div className="access-panel-container">
+          <AccessCodePanel accessCode={accessCode} />
+
+          <IconButton onClick={handleExit} disabled={isExiting} className="exit-call-button" aria-label="Выйти из чата">
+            <CallEndIcon fontSize="large" />
+          </IconButton>
+
+          <IconButton onClick={handleToggleMic} className="toggle-mic-button" aria-label="Вкл/выкл микрофон">
+            {micEnabled ? <MicIcon fontSize="large" /> : <MicOffIcon fontSize="large" />}
+          </IconButton>
+
+          <IconButton onClick={handleToggleScreenSharing} className="toggle-screen-button" aria-label="Вкл/выкл демонстрацию экрана">
+            {screenSharing ? <StopScreenShareIcon fontSize="large" /> : <ScreenShareIcon fontSize="large" />}
+          </IconButton>
+
+          <IconButton
+            onClick={() => setSubtitlesEnabled(prev => !prev)}
+            className="toggle-subtitles-button"
+            aria-label="Вкл/выкл субтитры"
+          >
+            {subtitlesEnabled ? <SubtitlesIcon fontSize="large" /> : <SubtitlesOffIcon fontSize="large" />}
+          </IconButton>
+
+          <IconButton
+            onClick={handleToggleChat}
+            className="toggle-chat-button"
+            aria-label="Чат"
+            style={{ opacity: showChat ? 0 : 1 }}
+            disabled={showChat}
+          >
+            <ChatIcon fontSize="large" />
+          </IconButton>
+
+        </div>
+      </div>
     </div>
   );
 };
 
-export default App;
+export default VideoCall;

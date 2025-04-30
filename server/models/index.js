@@ -1,10 +1,22 @@
-const User = require('./User');  // Импортируем модель User
-const Conference = require('./Conference');  // Импортируем модель Conference
-const Token = require('./Token');  // Импортируем модель Token
+const User = require('./User');  
+const Conference = require('./Conference');  
+const Token = require('./Token');  
+const Participant = require('./Participant')
+const Transcript = require('./Transcript')
+const ConferenceFile = require("./ConferenceFile")
+const FileStatus = require('./FileStatus')
+const Language = require('./Language.js')
+const Message = require('./Message.js')
 
-// Экспортируем все модели для использования в других частях приложения
+
 module.exports = {
   User,
   Conference,
-  Token
+  Token,
+  Participant,
+  Transcript,
+  ConferenceFile,
+  FileStatus,
+  Language,
+  Message
 };

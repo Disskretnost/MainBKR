@@ -1,0 +1,272 @@
+
+.video-conference-container {
+  height: 100vh;
+  background-color: #252827;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.video-container {
+  width: 100%;
+  max-height: 90vh; /* Ограничение максимальной высоты */
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  justify-content: center;
+  align-content: center;
+  margin: 0 auto;
+}
+
+/* 1 участник */
+.video-container.grid-1 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  aspect-ratio: 16 / 9; /* 1 участник всегда 16:9 */
+  max-width: 50%;
+}
+
+
+.video-container.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+  
+  
+  max-width: 90%;
+}
+
+/* 3 участника: 2 сверху, 1 снизу (по центру) */
+.video-container.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: 1fr 1fr; 
+  max-width: 70%;
+  height: 100%; 
+}
+
+/* Выравнивание всех видео по центру ячейки */
+.video-container.grid-3 .stream-container {
+  align-self: center; 
+}
+
+/* Центрируем третьего участника */
+.video-container.grid-3 .stream-container:nth-child(3) {
+  grid-column: 1 / -1; /* Растягиваем на всю ширину */
+  justify-self: center;
+  align-self: center; /* Центрируем внутри строки */
+  max-width: 50%; /* Делаем его не больше верхних */
+}
+/* 4 участника (2x2) */
+.video-container.grid-4 {
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, auto);
+  aspect-ratio: 16 / 9; /* Гарантия правильного масштаба */
+  max-width: 80%;
+}
+
+/* 5+ участников */
+.video-container.grid-many {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  aspect-ratio: 16 / 9;
+  max-width: 90%;
+}
+
+/* Видео-контейнер */
+.stream-container {
+  position: relative; /* нужно для абсолютного позиционирования субтитров */
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background-color: #000;
+  border-radius: 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* Субтитры поверх видео */
+.subtitle-container {
+  position: absolute;
+  bottom: 5%; /* немного выше нижнего края */
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 16px;
+  max-width: 90%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Видео внутри контейнера */
+.video-element {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Теперь видео будет заполнять контейнер без черных полос */
+}
+
+
+
+
+/* Кнопка выхода */
+.exit-call-button {
+  margin-left: 150px;
+  background-color: #d32f2f;
+  color: white;
+  padding: 12px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+.exit-call-button:hover {
+  background-color: #b71c1c;
+  transform: scale(1.1);
+}
+
+.exit-call-button svg {
+  fill: white;
+}
+
+.exit-call-button:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.toggle-mic-button {
+  margin-left: 16px;
+  background-color: #4caf50; /* зелёный, как "включено" */
+  color: white;
+  padding: 12px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+.toggle-mic-button:hover {
+  background-color: #388e3c;
+  transform: scale(1.1);
+}
+
+.toggle-mic-button svg {
+  fill: white;
+}
+
+.toggle-screen-button {
+  margin-left: 16px;
+  background-color: #1976d2; /* синий цвет как "включено" */
+  color: white;
+  padding: 12px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+.toggle-screen-button:hover {
+  background-color: #1565c0;
+  transform: scale(1.1);
+}
+
+.toggle-screen-button svg {
+  fill: white;
+}
+
+/* Состояние выключенной демонстрации (если нужно менять цвет, можно добавить класс .off) */
+.toggle-screen-button.off {
+  background-color: #757575; /* серый, как "выключено" */
+}
+
+.toggle-screen-button.off:hover {
+  background-color: #616161;
+}
+
+.main-content {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  
+}
+
+.video-wrapper {
+  flex: 1;
+  display: flex;
+  transition: all 0.3s ease;
+}
+
+.toggle-chat-button {
+  margin-left: 16px;
+  background-color: #1976d2; /* синий цвет, как у демонстрации экрана */
+  color: white;
+  padding: 12px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+  pointer-events: auto; /* по умолчанию кликабельная */
+}
+
+.toggle-chat-button:hover {
+  background-color: #1565c0;
+  transform: scale(1.1);
+}
+
+.toggle-chat-button svg {
+  fill: white;
+}
+
+/* Скрытие кнопки, если чат открыт (по opacity и отключению кликов) */
+.toggle-chat-button.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.access-panel-container{
+  z-index: 0;
+
+}
+
+.subtitle-container:empty {
+  display: none;
+}
+
+
+.toggle-subtitles-button {
+  margin-left: 16px;
+  background-color: #fbc02d; /* желтый, как индикатор включения субтитров */
+  color: white;
+  padding: 12px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  transition: all 0.3s ease;
+}
+
+.toggle-subtitles-button:hover {
+  background-color: #f57f17; /* более темный желтый при наведении */
+  transform: scale(1.1);
+}
+
+.toggle-subtitles-button svg {
+  fill: white;
+}
+
+/* Состояние выключенных субтитров */
+.toggle-subtitles-button.off {
+  background-color: #bdbdbd; /* серый цвет, если субтитры выключены */
+}
+
+.toggle-subtitles-button.off:hover {
+  background-color: #9e9e9e;
+}
+
+/* Убедитесь, что кнопка скрыта или неактивна, если субтитры уже включены */
+.toggle-subtitles-button.hidden {
+  opacity: 0;
+  pointer-events: none;
+}

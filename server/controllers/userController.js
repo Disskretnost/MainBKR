@@ -1,11 +1,11 @@
-// controllers/userController.js
+
 const userService = require('../services/user-service');
 const {validationResult} = require('express-validator');
 const ApiError = require('./../exceptions/apiError');
 const TokenService = require('./../services/token-service')
 
 class UserController {
-    // Регистрация пользователя
+
     async registration(req, res, next) {
         try {
             const { phone, email, username, password } = req.body;
@@ -34,15 +34,13 @@ class UserController {
             if (!refreshToken) {
                 return res.status(400).json({ message: "Refresh token не передан" });
             }
-            await userService.logout(refreshToken); // Invalidate the refresh token
+            await userService.logout(refreshToken); 
             return res.json({ message: "Logout successful" });
         } catch (e) {
             next(e);
         }
     }
-    
 
-    // Обновление refresh токена
     async refresh(req, res, next) {
         try {
             const { refreshToken } = req.body;
@@ -52,7 +50,6 @@ class UserController {
             next(e);
         }
     }
-
 
     async getUsers(req, res, next) {
         try {

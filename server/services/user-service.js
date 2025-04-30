@@ -5,6 +5,7 @@ const TokenService = require('./token-service');
 const UserDTO = require('./../dtos/user-dto');
 const ApiError = require('./../exceptions/apiError');
 const tokenService = require('./token-service');
+const LanguageService = require('./language-service'); 
 
 class UserService {
     async registration(phone, email, username, password) {
@@ -35,6 +36,7 @@ class UserService {
         const newUserDto = new UserDTO(newUser);
         const tokens = TokenService.generateToken({ id: newUserDto.id });
         await TokenService.saveToken(newUserDto.id, tokens.refreshToken);
+        await LanguageService.addLanguage(newUserDto.id, 'ru'); 
         return { ...tokens, user: newUserDto };
     }
 
@@ -73,7 +75,7 @@ class UserService {
         }
     
         const user = await User.findOne({ where: { id: userData.id } });
-        const userDto = new UserDTO(user);  // Здесь создаем userDto, а не newUserDto
+        const userDto = new UserDTO(user);  
         const tokens = TokenService.generateToken({ id: userDto.id });
         await TokenService.saveToken(userDto.id, tokens.refreshToken);
         return { ...tokens, user: userDto };

@@ -1,0 +1,75 @@
+
+.files-page__actions {
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 10px;
+}
+
+.files-page__button {
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.files-page__image {
+    background: transparent;
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+} 
+
+
+.files-page {
+    padding: 30px; /* Было 20px */
+    color: white;
+}
+  
+.files-page h2 {
+    margin-bottom: 30px; /* Было 20px */
+    font-size: 1.8em; /* Добавлено */
+}
+  
+.files-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px; /* Было 20px */
+}
+  
+.file-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    width: 180px; /* Было 120px */
+    height: 250px; /* Было 150px */
+    padding: 20px; /* Было 15px */
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 12px; /* Было 8px */
+    transition: all 0.3s ease;
+    text-align: center;
+}
+  
+.file-item:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-5px); /* Было -3px */
+}
+  
+.file-icon {
+    width: 120px; /* Было 80px */
+    height: 120px; /* Было 80px */
+    object-fit: contain;
+    background-color: transparent;
+}
+  
+.file-date {
+    color: white;
+    font-size: 16px; /* Было 12px */
+
+}
