@@ -1,24 +1,38 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { createConference } from '../../slices/roomSlice';
+import { setLanguages } from '../../slices/languageSlice';  // импорт action
+import LanguageService from '../../services/LanguageService'; // импорт сервиса
 import './HomePage.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faDoorOpen } from '@fortawesome/free-solid-svg-icons';
 import RoomService from '../../services/RoomService';
-import { Link } from 'react-router-dom'; 
+import { Link } from 'react-router-dom';
 
 const HomePage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { id } = useSelector(state => state.auth.user);
 
+  // Загрузка языков при монтировании компонента
+  useEffect(() => {
+    LanguageService.getLanguages()
+      .then(languages => {
+        dispatch(setLanguages(languages));
+        console.log("Сохранение языков")
+      })
+      .catch(err => {
+        console.error('Ошибка загрузки языков:', err);
+      });
+  }, [dispatch]);
+
   const handleCreateRoom = (e) => {
     e.preventDefault();
 
     RoomService.createConference(id)
       .then(result => {
-        const { id, ownerId, accessCode, createdAt, isActive } = result; 
+        const { id, ownerId, accessCode, createdAt, isActive } = result;
         dispatch(createConference({
           id,
           ownerId,
@@ -42,7 +56,6 @@ const HomePage = () => {
     <div className="home-page-container">
       <nav className="nav-bar">
         <div className="nav-links">
-
           <Link to="/files" className="nav-link">
             Files
           </Link>

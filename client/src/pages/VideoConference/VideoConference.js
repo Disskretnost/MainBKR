@@ -158,12 +158,14 @@ const VideoCall = () => {
   
       // Если языки одинаковые, ничего не делаем
       if (lang3 === primaryLanguage) {
+        console.log("Языки одинаковые")
         return;
       }
-  
+      const targetLang = primaryLanguage;
+      console.log("Разные", lang3, targetLang.language)
       // Если языки разные, выполняем перевод
       try {
-        const targetLang = primaryLanguage;
+
         const url = `https://translate.googleapis.com/translate_a/single?client=gtx&dt=t&sl=${lang3}&tl=${targetLang}&q=${encodeURIComponent(text)}`;
         const res = await fetch(url);
         const data = await res.json();

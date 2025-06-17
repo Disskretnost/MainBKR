@@ -6,7 +6,6 @@ const Transcript = require('./Transcript')
 const ConferenceFile = require("./ConferenceFile")
 const FileStatus = require('./FileStatus')
 const Language = require('./Language.js')
-const Message = require('./Message.js')
 
 
 module.exports = {
@@ -17,6 +16,5 @@ module.exports = {
   Transcript,
   ConferenceFile,
   FileStatus,
-  Language,
-  Message
+  Language
 };

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { setAuthData } from './../../slices/authSlice';
+import { setLanguages } from './../../slices/languageSlice'; // импорт setLanguages
 import AuthService from './../../services/AuthService';
+import LanguageService from './../../services/LanguageService';
 import { useNavigate } from 'react-router-dom';
 import './Loginpage.css';
 
@@ -14,26 +16,34 @@ const LoginPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-  
+
     AuthService.login(email, password)
-      .then(result => {
+      .then(async (result) => {
         const { accessToken, refreshToken, user } = result;
-        
+
         dispatch(setAuthData({
           accessToken,
           refreshToken,
           user
         }));
+
+        try {
+          const languages = await LanguageService.getLanguages();
+          dispatch(setLanguages(languages));
+        } catch (langError) {
+          console.error('Ошибка при получении языков:', langError.message);
+          // Можно показать уведомление пользователю или просто игнорировать ошибку
+        }
+
         navigate('/');
       })
       .catch(err => {
         setError("Invalid username or password");
       });
   };
-  
 
   const handleSignUp = () => {
-    navigate('/registration');  // Переход на страницу регистрации
+    navigate('/registration');
   };
 
   return (
@@ -59,7 +69,7 @@ const LoginPage = () => {
             required
           />
           {error && <p className="login-page__error">{error}</p>}
-          
+
           <div className="login-page__forgot-password">
             <a href="#" className="login-page__forgot-password-link">Forgot password?</a>
           </div>
@@ -69,7 +79,7 @@ const LoginPage = () => {
 
         <div className="login-page__signup">
           <span>Don't have an account? 
-          <button 
+            <button 
               className="login-page__signup-label" 
               onClick={handleSignUp} 
             >

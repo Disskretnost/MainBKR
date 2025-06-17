@@ -1,4 +1,4 @@
-
+// src/utils/SpeechRecognitionManager.js
 import { franc } from 'franc';
 
 export default class SpeechRecognitionManager {
@@ -25,14 +25,14 @@ export default class SpeechRecognitionManager {
 
     this.recognition.continuous = true;
     this.recognition.interimResults = false;
-    this.recognition.lang = 'ru-RU';  
+    this.recognition.lang = 'ru-RU';  // Вы можете изменить язык на другой по умолчанию
 
     this.recognition.onresult = this._handleResult.bind(this);
     this.recognition.onerror = this._handleError.bind(this);
     this.recognition.onstart = () => console.log('🎙️ Распознавание речи запущено');
     this.recognition.onend = () => {
       console.log('🔁 Распознавание завершено, перезапуск...');
-      this.start(); 
+      this.start(); // автоперезапуск
     };
   }
 
@@ -45,32 +45,57 @@ export default class SpeechRecognitionManager {
     }
 
     const whitelist = [
-      'en', // Английский
-      'zh', // Мандарин (китайский)
-      'es', // Испанский
-      'fr', // Французский
-      'ar', // Арабский
-      'pt', // Португальский
-      'de', // Немецкий
-      'ru', // Русский
-      'ja', // Японский
-      'hi'  // Хинди
+      'eng', // Английский
+      'cmn', // Мандарин (китайский)
+      'spa', // Испанский
+      'fra', // Французский
+      'ara', // Арабский
+      'por', // Португальский
+      'deu', // Немецкий
+      'rus', // Русский
+      'jpn', // Японский
+      'hin'  // Хинди
     ];
-    
+    const whitelist2 = [
+      'en', // для eng
+      'zh', // для cmn
+      'es', // для spa
+      'fr', // для fra
+      'ar', // для ara
+      'pt', // для por
+      'de', // для deu
+      'ru', // для rus
+      'ja', // для jpn
+      'hi'  // для hin
+    ];
 
     if (finalTranscript && this.socket) {
-      let lang3 = franc(finalTranscript, { whitelist }); 
+      // Определение языка с использованием franc и whitelist
+      let lang3 = franc(finalTranscript, { whitelist }); // Определяем язык с учетом whitelist
 
       if (lang3 === 'und') {
         console.warn('Не удалось определить язык');
       }
+
+      let lang2 = 'en'; // язык по умолчанию
+
+      const index = whitelist.indexOf(lang3);
+      if (index !== -1) {
+        lang2 = whitelist2[index];
+      } else {
+        console.warn('Не удалось сопоставить язык:', lang3);
+      }
+
+      // Отправка сообщения с определённым языком
       this.socket.emit('newMessage', {
         userId: this.userId,
         roomId: this.roomId,
         text: finalTranscript,
         isSpeech: true,
-        lang3, 
+        lang3: lang2
       });
+
+      
     }
   }
 
